@@ -1,6 +1,21 @@
 [
   
   {
+    "title": "Xcode16 使用 Cocoapods 报错的解决办法",
+    "url": "/posts/cocoapods-error-in-xcode16/",
+    "categories": "开发总结, iOS",
+    "tags": "Cocoapds, Xcode, SPM",
+    "date": "2024-10-18 21:45:00 +0800",
+    
+
+
+
+
+
+    "snippet": "升级 XCode16 之后就发现 cocoapods 不好用了, 由于当时都是老项目影响不大, 就没有去折腾.最近要开新项目了, 实在是绕不过去了, 就仔细研究了一下.新建的项目只要是使用 pod init 或者 pod install 都会报错.基本报错有 2 种情况, 报错信息在 Podfile 内容的下面. 根据具体情况来解决.  由于报错信息很长, 只贴出来了关键信息.  先说最好的解决办法: 把 cocoapods  迁移到 SPM, 肯定是没错的, 能彻底解决问题.继续说问题第一种情况RuntimeError - `PBXGroup` attempted to initialize an object with unknown ISA PBXFileSystemSynchronizedRootGroup这个情况比较复杂, 在内网和外网折腾了一上午.  重装 cocoapods  重装 ruby  把 project.pbxproj 文件中的 PBXFileSystemSynchronizedRootGroup 全部替换成 PBXGroup  在 XCode 中右键点击项目文件夹, 选择 Convert to Folder  删除新建项目时候附带的 Tests UITest, 包括 target 一起删掉.以上方法中 1 和 2 就不用试了, 基本没用(如果 cocoapods 已经是最新版的情况下).必须 4 + 5 同时做了之后就可以正常使用 cocoapods 了第二种情况RuntimeError - [Xcodeproj] Unknown object version (77).解决办法:右键项目目录下的 &amp;lt;#ProjectName#&amp;gt;.xcodeproj 文件, 选择 显示包内容, 使用文本编辑器打开 project.pbxproj 文件. 修改 objectVersion 的值:把objectVersion = 77;改成objectVersion = 56;最后记录这个一个是为了自己以后不用再到处找解决办法, 另一个是希望能帮到遇到同样问题的小伙伴.如果你有遇到除以上 2 中情况以外的报错, 欢迎在评论区留言共同讨论.如果你有其他解决办法也欢迎在评论区补充或者贴一个文章地址, 这样能够在将来帮助到更多的人."
+  },
+  
+  {
     "title": "常见文件头收集",
     "url": "/posts/%E6%96%87%E4%BB%B6%E5%A4%B4/",
     "categories": "开发总结, iOS",
@@ -19,7 +34,7 @@
     "title": "Swift 中 Protocol 和 泛型",
     "url": "/posts/Swift-%E4%B8%AD-Protocol-%E5%92%8C-%E6%B3%9B%E5%9E%8B/",
     "categories": "开发总结, iOS",
-    "tags": "",
+    "tags": "Swift",
     "date": "2020-08-29 21:45:00 +0800",
     
 
@@ -34,7 +49,7 @@
     "title": "设置 UIDatePicker 显示日期为中文",
     "url": "/posts/%E8%AE%BE%E7%BD%AE-UIDatePicker-%E6%98%BE%E7%A4%BA%E6%97%A5%E6%9C%9F%E4%B8%BA%E4%B8%AD%E6%96%87/",
     "categories": "开发总结, iOS",
-    "tags": "",
+    "tags": "UIKit, 国际化",
     "date": "2020-03-24 18:24:00 +0800",
     
 
@@ -49,7 +64,7 @@
     "title": " iOS 中 URL 里面的 &#39;#&#39; 后面的 &#39;/&#39; 被解析为路径的解决办法",
     "url": "/posts/iOS-%E4%B8%AD-URL-%E9%87%8C%E9%9D%A2%E7%9A%84-%E5%90%8E%E9%9D%A2%E7%9A%84-%E8%A2%AB%E8%A7%A3%E6%9E%90%E4%B8%BA%E8%B7%AF%E5%BE%84%E7%9A%84%E8%A7%A3%E5%86%B3%E5%8A%9E%E6%B3%95/",
     "categories": "开发总结, iOS",
-    "tags": "",
+    "tags": "WebView",
     "date": "2020-03-24 15:09:00 +0800",
     
 
@@ -64,7 +79,7 @@
     "title": "UITableView 隐藏部分类型 Cell 的分割线",
     "url": "/posts/UITableView-%E9%9A%90%E8%97%8F%E9%83%A8%E5%88%86%E7%B1%BB%E5%9E%8B-Cell-%E7%9A%84%E5%88%86%E5%89%B2%E7%BA%BF/",
     "categories": "开发总结, iOS",
-    "tags": "",
+    "tags": "UIKit",
     "date": "2020-03-13 18:08:00 +0800",
     
 
@@ -79,7 +94,7 @@
     "title": "UIToolBar 约束警告",
     "url": "/posts/UIToolBar-%E7%BA%A6%E6%9D%9F%E8%AD%A6%E5%91%8A/",
     "categories": "开发总结, iOS",
-    "tags": "",
+    "tags": "UIKit",
     "date": "2020-03-10 21:28:00 +0800",
     
 
@@ -94,7 +109,7 @@
     "title": "QMUI: 设置 hidesBottomBarWhenPushed 为 NO 无效",
     "url": "/posts/QMUI-%E8%AE%BE%E7%BD%AE-hidesBottomBarWhenPushed-%E4%B8%BA-NO-%E6%97%A0%E6%95%88/",
     "categories": "开发总结, iOS",
-    "tags": "",
+    "tags": "QMUIKit",
     "date": "2020-02-29 13:55:00 +0800",
     
 
@@ -109,7 +124,7 @@
     "title": "广点通 SDK 报错: 开屏广告 rootViewController 已经 presenting",
     "url": "/posts/%E5%B9%BF%E7%82%B9%E9%80%9A-SDK-%E6%8A%A5%E9%94%99-%E5%BC%80%E5%B1%8F%E5%B9%BF%E5%91%8A-rootViewController-%E5%B7%B2%E7%BB%8F-presenting/",
     "categories": "开发总结, iOS",
-    "tags": "",
+    "tags": "Ads",
     "date": "2020-02-18 22:54:00 +0800",
     
 
@@ -124,7 +139,7 @@
     "title": "Realm 报错闪退: &#39;RLMException&#39;, reason: &#39;Primary key property &#39;identity&#39; does not exist on object &#39;RealmSwiftPermissionUser&#39;&#39;",
     "url": "/posts/Realm-%E6%8A%A5%E9%94%99%E9%97%AA%E9%80%80-RLMException,-reason-Primary-key-property-identity-does-not-exist-on-object-RealmSwiftPermissionUser/",
     "categories": "开发总结, iOS",
-    "tags": "",
+    "tags": "Realm",
     "date": "2020-01-04 14:32:46 +0800",
     
 
@@ -139,7 +154,7 @@
     "title": "iOS 方法内局部变量 (对象) 的内存释放",
     "url": "/posts/iOS-%E6%96%B9%E6%B3%95%E5%86%85%E5%B1%80%E9%83%A8%E5%8F%98%E9%87%8F-(%E5%AF%B9%E8%B1%A1)-%E7%9A%84%E5%86%85%E5%AD%98%E9%87%8A%E6%94%BE/",
     "categories": "开发总结, iOS",
-    "tags": "",
+    "tags": "iOS",
     "date": "2019-12-01 17:52:00 +0800",
     
 
@@ -154,7 +169,7 @@
     "title": "UIWebView 已经彻底被苹果抛弃了",
     "url": "/posts/UIWebView-%E5%B7%B2%E7%BB%8F%E5%BD%BB%E5%BA%95%E8%A2%AB%E8%8B%B9%E6%9E%9C%E6%8A%9B%E5%BC%83%E4%BA%86/",
     "categories": "开发总结, iOS",
-    "tags": "",
+    "tags": "iOS, UIKit",
     "date": "2019-11-22 13:18:00 +0800",
     
 
@@ -169,7 +184,7 @@
     "title": "iOS13 中修改 UITabbarItem 字体颜色",
     "url": "/posts/iOS13-%E4%B8%AD%E4%BF%AE%E6%94%B9-UITabbarItem-%E5%AD%97%E4%BD%93%E9%A2%9C%E8%89%B2/",
     "categories": "开发总结, iOS",
-    "tags": "",
+    "tags": "iOS, UIKit",
     "date": "2019-10-25 21:12:00 +0800",
     
 
@@ -184,7 +199,7 @@
     "title": "Xcode11 的工程如何修改成老工程",
     "url": "/posts/Xcode11-%E7%9A%84%E5%B7%A5%E7%A8%8B%E5%A6%82%E4%BD%95%E4%BF%AE%E6%94%B9%E6%88%90%E8%80%81%E5%B7%A5%E7%A8%8B/",
     "categories": "开发总结, iOS",
-    "tags": "",
+    "tags": "iOS, Xcode",
     "date": "2019-10-19 10:35:00 +0800",
     
 
@@ -199,7 +214,7 @@
     "title": "更新 macOS 10.15 之后 Cocoapods 无法使用的解决办法",
     "url": "/posts/%E6%9B%B4%E6%96%B0-macOS-10.15-%E4%B9%8B%E5%90%8E-Cocoapods-%E6%97%A0%E6%B3%95%E4%BD%BF%E7%94%A8%E7%9A%84%E8%A7%A3%E5%86%B3%E5%8A%9E%E6%B3%95/",
     "categories": "开发总结, iOS",
-    "tags": "",
+    "tags": "Cocoapods",
     "date": "2019-10-16 14:34:00 +0800",
     
 
@@ -229,7 +244,7 @@
     "title": "Unity 中如何关闭 UI 的用户交互开关",
     "url": "/posts/Unity-%E4%B8%AD%E5%A6%82%E4%BD%95%E5%85%B3%E9%97%AD-UI-%E7%9A%84%E7%94%A8%E6%88%B7%E4%BA%A4%E4%BA%92%E5%BC%80%E5%85%B3/",
     "categories": "开发总结, Unity",
-    "tags": "",
+    "tags": "Unity",
     "date": "2019-10-14 13:23:00 +0800",
     
 
@@ -244,7 +259,7 @@
     "title": "iOS 13 之后 Masonry 使用上面的一些注意事项 (动画效果未达预期)",
     "url": "/posts/iOS-13-%E4%B9%8B%E5%90%8E-Masonry-%E4%BD%BF%E7%94%A8%E4%B8%8A%E9%9D%A2%E7%9A%84%E4%B8%80%E4%BA%9B%E6%B3%A8%E6%84%8F%E4%BA%8B%E9%A1%B9-(%E5%8A%A8%E7%94%BB%E6%95%88%E6%9E%9C%E6%9C%AA%E8%BE%BE%E9%A2%84%E6%9C%9F)/",
     "categories": "开发总结, iOS",
-    "tags": "",
+    "tags": "iOS, UIKit, Masonry",
     "date": "2019-10-05 14:43:00 +0800",
     
 
@@ -259,7 +274,7 @@
     "title": "iOS 开发关于暗黑模式 (Dark Model) 的问题",
     "url": "/posts/iOS-%E5%BC%80%E5%8F%91%E5%85%B3%E4%BA%8E%E6%9A%97%E9%BB%91%E6%A8%A1%E5%BC%8F-(Dark-Model)-%E7%9A%84%E9%97%AE%E9%A2%98/",
     "categories": "开发总结, iOS",
-    "tags": "",
+    "tags": "iOS",
     "date": "2019-10-01 21:59:25 +0800",
     
 
@@ -274,7 +289,7 @@
     "title": "升级 iOS 13 之后好像更加耗电了(解决办法) ",
     "url": "/posts/%E5%8D%87%E7%BA%A7-iOS-13-%E4%B9%8B%E5%90%8E%E5%A5%BD%E5%83%8F%E6%9B%B4%E5%8A%A0%E8%80%97%E7%94%B5%E4%BA%86(%E8%A7%A3%E5%86%B3%E5%8A%9E%E6%B3%95)/",
     "categories": "日常",
-    "tags": "",
+    "tags": "iOS",
     "date": "2019-09-21 13:40:11 +0800",
     
 
@@ -289,7 +304,7 @@
     "title": "iOS 中时区的坑",
     "url": "/posts/iOS-%E4%B8%AD%E6%97%B6%E5%8C%BA%E7%9A%84%E5%9D%91/",
     "categories": "开发总结, iOS",
-    "tags": "",
+    "tags": "iOS",
     "date": "2019-09-11 22:41:29 +0800",
     
 
@@ -304,7 +319,7 @@
     "title": "Xcode 编译失败但不显示报错信息的解决办法",
     "url": "/posts/Xcode-%E7%BC%96%E8%AF%91%E5%A4%B1%E8%B4%A5%E4%BD%86%E4%B8%8D%E6%98%BE%E7%A4%BA%E6%8A%A5%E9%94%99%E4%BF%A1%E6%81%AF%E7%9A%84%E8%A7%A3%E5%86%B3%E5%8A%9E%E6%B3%95/",
     "categories": "开发总结, iOS",
-    "tags": "",
+    "tags": "iOS, Xcode",
     "date": "2019-08-31 15:50:56 +0800",
     
 
@@ -319,7 +334,7 @@
     "title": "Swift 5.1 学习: (7) 字符串和字符",
     "url": "/posts/Swift-5.1-%E5%AD%A6%E4%B9%A0-(7)-%E5%AD%97%E7%AC%A6%E4%B8%B2%E5%92%8C%E5%AD%97%E7%AC%A6/",
     "categories": "开发总结, iOS",
-    "tags": "",
+    "tags": "iOS, Swift",
     "date": "2019-08-30 14:32:46 +0800",
     
 
@@ -334,7 +349,7 @@
     "title": "Swift 5.1 学习 (6) : 基本运算符",
     "url": "/posts/Swift-5.1-%E5%AD%A6%E4%B9%A0-(6)-%E5%9F%BA%E6%9C%AC%E8%BF%90%E7%AE%97%E7%AC%A6/",
     "categories": "开发总结, iOS",
-    "tags": "",
+    "tags": "iOS, Swift",
     "date": "2019-08-21 13:06:36 +0800",
     
 
@@ -349,7 +364,7 @@
     "title": "Swift 5.1 学习 (5) : 可选类型",
     "url": "/posts/Swift-5.1-%E5%AD%A6%E4%B9%A0-(5)-%E5%8F%AF%E9%80%89%E7%B1%BB%E5%9E%8B/",
     "categories": "开发总结, iOS",
-    "tags": "",
+    "tags": "iOS, Swift",
     "date": "2019-08-18 20:20:08 +0800",
     
 
@@ -364,7 +379,7 @@
     "title": "iOS 因控制字符导致解析 XML 失败",
     "url": "/posts/iOS-%E5%9B%A0%E6%8E%A7%E5%88%B6%E5%AD%97%E7%AC%A6%E5%AF%BC%E8%87%B4%E8%A7%A3%E6%9E%90-XML-%E5%A4%B1%E8%B4%A5/",
     "categories": "开发总结, iOS",
-    "tags": "",
+    "tags": "iOS, 网络, XML",
     "date": "2019-08-15 17:57:00 +0800",
     
 
@@ -379,7 +394,7 @@
     "title": "Swift 5.1 学习 (4) : 元组",
     "url": "/posts/Swift-5.1-%E5%AD%A6%E4%B9%A0-(4)-%E5%85%83%E7%BB%84/",
     "categories": "开发总结, iOS",
-    "tags": "",
+    "tags": "iOS, Swift",
     "date": "2019-08-13 23:57:00 +0800",
     
 
@@ -394,7 +409,7 @@
     "title": "PHP 如何通过方法名判断方法是否实现并调用方法",
     "url": "/posts/PHP-%E5%A6%82%E4%BD%95%E9%80%9A%E8%BF%87%E6%96%B9%E6%B3%95%E5%90%8D%E5%88%A4%E6%96%AD%E6%96%B9%E6%B3%95%E6%98%AF%E5%90%A6%E5%AE%9E%E7%8E%B0%E5%B9%B6%E8%B0%83%E7%94%A8%E6%96%B9%E6%B3%95/",
     "categories": "开发总结, PHP",
-    "tags": "",
+    "tags": "iOS, PHP",
     "date": "2019-08-11 22:43:29 +0800",
     
 
@@ -409,7 +424,7 @@
     "title": "Swift 5.1 学习 (3) : 基本数据类型",
     "url": "/posts/Swift-5.1-%E5%AD%A6%E4%B9%A0-(3)-%E5%9F%BA%E6%9C%AC%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/",
     "categories": "开发总结, iOS",
-    "tags": "",
+    "tags": "iOS, Swift",
     "date": "2019-08-09 18:56:31 +0800",
     
 
@@ -424,7 +439,7 @@
     "title": "Referencing initializer &#39;init(_:id:content:)&#39; on &#39;ForEach&#39; requires that &#39;xxxxxx&#39; conform to &#39;Hashable&#39;",
     "url": "/posts/Referencing-initializer-init(_id-content)-on-ForEach-requires-that-xxxxxx-conform-to-Hashable/",
     "categories": "开发总结, iOS",
-    "tags": "",
+    "tags": "iOS, Swift",
     "date": "2019-08-08 23:40:22 +0800",
     
 
@@ -439,7 +454,7 @@
     "title": "Swift 5.1 学习 (2) : 常量和变量",
     "url": "/posts/Swift-5.1-%E5%AD%A6%E4%B9%A0-(2)-%E5%B8%B8%E9%87%8F%E5%92%8C%E5%8F%98%E9%87%8F/",
     "categories": "开发总结, iOS",
-    "tags": "",
+    "tags": "iOS, Swift",
     "date": "2019-08-07 23:08:51 +0800",
     
 
@@ -454,7 +469,7 @@
     "title": "Swift 5.1 学习 (1) :  前言",
     "url": "/posts/Swift-5.1-%E5%AD%A6%E4%B9%A0-(1)-%E5%89%8D%E8%A8%80/",
     "categories": "开发总结, iOS",
-    "tags": "",
+    "tags": "iOS, Swift",
     "date": "2019-08-06 23:15:36 +0800",
     
 
@@ -469,7 +484,7 @@
     "title": "记一次 Admob 广告被停经历",
     "url": "/posts/%E8%AE%B0%E4%B8%80%E6%AC%A1-Admob-%E5%B9%BF%E5%91%8A%E8%A2%AB%E5%81%9C%E7%BB%8F%E5%8E%86/",
     "categories": "开发总结, iOS",
-    "tags": "",
+    "tags": "iOS, Ads, Admob",
     "date": "2019-08-05 15:31:52 +0800",
     
 
@@ -484,7 +499,7 @@
     "title": "UITabBar 内容被挤压的一个坑",
     "url": "/posts/UITabBar-%E5%86%85%E5%AE%B9%E8%A2%AB%E6%8C%A4%E5%8E%8B%E7%9A%84%E4%B8%80%E4%B8%AA%E5%9D%91/",
     "categories": "开发总结, iOS",
-    "tags": "",
+    "tags": "iOS, UIKit",
     "date": "2019-08-03 13:37:46 +0800",
     
 
@@ -499,7 +514,7 @@
     "title": "记一次 UICollectionView 卡顿掉帧的问题",
     "url": "/posts/%E8%AE%B0%E4%B8%80%E6%AC%A1-UICollectionView-%E5%8D%A1%E9%A1%BF%E6%8E%89%E5%B8%A7%E7%9A%84%E9%97%AE%E9%A2%98/",
     "categories": "开发总结, iOS",
-    "tags": "",
+    "tags": "iOS, UIKit",
     "date": "2019-08-01 11:32:16 +0800",
     
 
@@ -514,7 +529,7 @@
     "title": "iOS 配置 App 的 Associated Domains",
     "url": "/posts/iOS-%E9%85%8D%E7%BD%AE-App-%E7%9A%84-Associated-Domains/",
     "categories": "开发总结, iOS",
-    "tags": "",
+    "tags": "iOS, Xcode",
     "date": "2019-07-30 13:09:22 +0800",
     
 
@@ -529,7 +544,7 @@
     "title": "iOS 实现垃圾短信服务端过滤 (Message Filter Extension)",
     "url": "/posts/iOS-%E5%AE%9E%E7%8E%B0%E5%9E%83%E5%9C%BE%E7%9F%AD%E4%BF%A1%E6%9C%8D%E5%8A%A1%E7%AB%AF%E8%BF%87%E6%BB%A4-(Message-Filter-Extension)/",
     "categories": "开发总结, iOS",
-    "tags": "",
+    "tags": "AppExtension, iOS",
     "date": "2019-07-29 13:52:57 +0800",
     
 
@@ -544,7 +559,7 @@
     "title": "iOS 实现垃圾短信客户端过滤 (Message Filter Extension)",
     "url": "/posts/iOS-%E5%AE%9E%E7%8E%B0%E5%9E%83%E5%9C%BE%E7%9F%AD%E4%BF%A1%E5%AE%A2%E6%88%B7%E7%AB%AF%E8%BF%87%E6%BB%A4-(Message-Filter-Extension)/",
     "categories": "开发总结, iOS",
-    "tags": "",
+    "tags": "AppExtension, iOS",
     "date": "2019-07-28 22:53:06 +0800",
     
 
@@ -559,7 +574,7 @@
     "title": "iOS 超简单的 旋转/翻转/放大 UIImage 的方法",
     "url": "/posts/iOS-%E8%B6%85%E7%AE%80%E5%8D%95%E7%9A%84-%E6%97%8B%E8%BD%AC-%E7%BF%BB%E8%BD%AC-%E6%94%BE%E5%A4%A7-UIImage-%E7%9A%84%E6%96%B9%E6%B3%95/",
     "categories": "开发总结, iOS",
-    "tags": "",
+    "tags": "UIKit, iOS",
     "date": "2019-07-27 19:48:33 +0800",
     
 
@@ -574,7 +589,7 @@
     "title": "UISlider 实现调色器 (渐变背景)",
     "url": "/posts/UISlider-%E5%AE%9E%E7%8E%B0%E8%B0%83%E8%89%B2%E5%99%A8-(%E6%B8%90%E5%8F%98%E8%83%8C%E6%99%AF)/",
     "categories": "开发总结, iOS",
-    "tags": "",
+    "tags": "UIKit, iOS",
     "date": "2019-07-26 16:19:00 +0800",
     
 
@@ -589,7 +604,7 @@
     "title": "iOS App 被判定为太简被拒绝上架",
     "url": "/posts/iOS-App-%E8%A2%AB%E5%88%A4%E5%AE%9A%E4%B8%BA%E5%A4%AA%E7%AE%80%E8%A2%AB%E6%8B%92%E7%BB%9D%E4%B8%8A%E6%9E%B6/",
     "categories": "AppStore",
-    "tags": "",
+    "tags": "AppStore, iOS",
     "date": "2019-07-25 16:04:01 +0800",
     
 
@@ -604,7 +619,7 @@
     "title": "macOS AppStore 审核坑之一: 打开主窗口",
     "url": "/posts/macOS-AppStore-%E5%AE%A1%E6%A0%B8%E5%9D%91%E4%B9%8B%E4%B8%80-%E6%89%93%E5%BC%80%E4%B8%BB%E7%AA%97%E5%8F%A3/",
     "categories": "AppStore",
-    "tags": "",
+    "tags": "macOS, AppStore",
     "date": "2019-07-24 12:27:27 +0800",
     
 
@@ -619,7 +634,7 @@
     "title": "iOS 数组常用操作: 筛选",
     "url": "/posts/iOS-%E6%95%B0%E7%BB%84%E5%B8%B8%E7%94%A8%E6%93%8D%E4%BD%9C-%E7%AD%9B%E9%80%89/",
     "categories": "开发总结, iOS",
-    "tags": "",
+    "tags": "数组, iOS",
     "date": "2019-07-23 11:33:58 +0800",
     
 
@@ -634,7 +649,7 @@
     "title": "iOS 打包上传卡在: Authenticating with the iTunes store",
     "url": "/posts/iOS-%E6%89%93%E5%8C%85%E4%B8%8A%E4%BC%A0%E5%8D%A1%E5%9C%A8-Authenticating-with-the-iTunes-store/",
     "categories": "开发总结, iOS",
-    "tags": "",
+    "tags": "Xcode, AppStore, iOS",
     "date": "2019-07-21 15:17:33 +0800",
     
 
@@ -649,7 +664,7 @@
     "title": "iOS 如何在视图内获取父视图的视图控制器?",
     "url": "/posts/iOS-%E5%A6%82%E4%BD%95%E5%9C%A8%E8%A7%86%E5%9B%BE%E5%86%85%E8%8E%B7%E5%8F%96%E7%88%B6%E8%A7%86%E5%9B%BE%E7%9A%84%E8%A7%86%E5%9B%BE%E6%8E%A7%E5%88%B6%E5%99%A8/",
     "categories": "开发总结, iOS",
-    "tags": "",
+    "tags": "UIKit, iOS",
     "date": "2019-07-20 13:04:46 +0800",
     
 
@@ -664,7 +679,7 @@
     "title": "iOS 数组常用操作: 排序",
     "url": "/posts/iOS-%E6%95%B0%E7%BB%84%E5%B8%B8%E7%94%A8%E6%93%8D%E4%BD%9C-%E6%8E%92%E5%BA%8F/",
     "categories": "开发总结, iOS",
-    "tags": "",
+    "tags": "数组, iOS",
     "date": "2019-07-19 17:59:11 +0800",
     
 
@@ -679,7 +694,7 @@
     "title": "iOS大文件读取内存问题",
     "url": "/posts/iOS%E5%A4%A7%E6%96%87%E4%BB%B6%E8%AF%BB%E5%8F%96%E5%86%85%E5%AD%98%E9%97%AE%E9%A2%98/",
     "categories": "开发总结, iOS",
-    "tags": "",
+    "tags": "Memory, iOS",
     "date": "2019-07-18 17:37:01 +0800",
     
 
@@ -694,7 +709,7 @@
     "title": "iOS 如何优雅的获取 URL 中的参数",
     "url": "/posts/iOS-%E5%A6%82%E4%BD%95%E4%BC%98%E9%9B%85%E7%9A%84%E8%8E%B7%E5%8F%96-URL-%E4%B8%AD%E7%9A%84%E5%8F%82%E6%95%B0/",
     "categories": "开发总结, iOS",
-    "tags": "",
+    "tags": "URL, iOS",
     "date": "2019-07-17 18:16:59 +0800",
     
 
@@ -709,7 +724,7 @@
     "title": "SQLite 文件类型判断",
     "url": "/posts/SQLite-%E6%96%87%E4%BB%B6%E7%B1%BB%E5%9E%8B%E5%88%A4%E6%96%AD/",
     "categories": "开发总结, iOS",
-    "tags": "",
+    "tags": "SQLite",
     "date": "2019-06-22 12:30:16 +0800",
     
 
@@ -724,7 +739,7 @@
     "title": "Xcode10 &amp; Cocoapods - error: Multiple commands produce",
     "url": "/posts/Xcode10-&-Cocoapods-error-Multiple-commands-produce/",
     "categories": "开发总结, iOS",
-    "tags": "",
+    "tags": "Xcode, Cocoapods, iOS",
     "date": "2019-05-22 17:55:28 +0800",
     
 
@@ -739,7 +754,7 @@
     "title": "Realm: Object has been deleted or invalidated when delete object",
     "url": "/posts/Realm-Object-has-been-deleted-or-invalidated-when-delete-object/",
     "categories": "开发总结, iOS",
-    "tags": "",
+    "tags": "Realm, iOS",
     "date": "2019-03-29 23:30:36 +0800",
     
 
@@ -754,7 +769,7 @@
     "title": "Cocoapods 在 pod install 之后出现多个 framework",
     "url": "/posts/Cocoapods-%E5%9C%A8-pod-install-%E4%B9%8B%E5%90%8E%E5%87%BA%E7%8E%B0%E5%A4%9A%E4%B8%AA-framework/",
     "categories": "开发总结, iOS",
-    "tags": "",
+    "tags": "Cocoapods, iOS",
     "date": "2019-02-21 18:50:22 +0800",
     
 

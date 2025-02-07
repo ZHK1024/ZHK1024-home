@@ -4,7 +4,7 @@
   <id>https://zhk1024.com/</id>
   <title>ZHK1024</title>
   <subtitle>A minimal, portfolio, sidebar, bootstrap Jekyll theme with responsive web design and focuses on text presentation.</subtitle>
-  <updated>2025-02-07T13:46:06+08:00</updated>
+  <updated>2025-02-07T16:01:58+08:00</updated>
   <author>
     <name>ZHK1024</name>
     <uri>https://zhk1024.com/</uri>
@@ -17,6 +17,64 @@
   <icon>/assets/img/favicons/favicon.ico</icon>
   <logo>/assets/img/favicons/favicon-96x96.png</logo>
 
+
+  
+  <entry>
+    <title>Xcode16 使用 Cocoapods 报错的解决办法</title>
+    <link href="https://zhk1024.com/posts/cocoapods-error-in-xcode16/" rel="alternate" type="text/html" title="Xcode16 使用 Cocoapods 报错的解决办法" />
+    <published>2024-10-18T21:45:00+08:00</published>
+  
+    <updated>2024-10-18T21:45:00+08:00</updated>
+  
+    <id>https://zhk1024.com/posts/cocoapods-error-in-xcode16/</id>
+    <content src="https://zhk1024.com/posts/cocoapods-error-in-xcode16/" />
+    <author>
+      <name>ZHK1024</name>
+    </author>
+
+  
+    
+    <category term="开发总结" />
+    
+    <category term="iOS" />
+    
+  
+
+  
+    <summary>
+      
+
+
+
+
+
+      升级 XCode16 之后就发现 cocoapods 不好用了, 由于当时都是老项目影响不大, 就没有去折腾.
+
+最近要开新项目了, 实在是绕不过去了, 就仔细研究了一下.
+新建的项目只要是使用 pod init 或者 pod install 都会报错.
+
+基本报错有 2 种情况, 报错信息在 Podfile 内容的下面. 根据具体情况来解决.
+
+
+  由于报错信息很长, 只贴出来了关键信息.
+
+
+
+  先说最好的解决办法: 把 cocoapods  迁移到 SPM, 肯定是没错的, 能彻底解决问题.
+
+
+继续说问题
+
+第一种情况
+
+RuntimeError - `PBXGroup` attempted to initialize an object with unknown ISA PBXFileSystemSynchronizedRootGroup
+
+
+这个情况比较复杂, 在内网...
+    </summary>
+  
+
+  </entry>
 
   
   <entry>
@@ -232,61 +290,6 @@ https://hostname.com/index.html/#/sign/login
 
 此时只需要对 #/sign/login 部分进行 URL 编码, 然后拼接再后面即可.
 
-    </summary>
-  
-
-  </entry>
-
-  
-  <entry>
-    <title>UITableView 隐藏部分类型 Cell 的分割线</title>
-    <link href="https://zhk1024.com/posts/UITableView-%E9%9A%90%E8%97%8F%E9%83%A8%E5%88%86%E7%B1%BB%E5%9E%8B-Cell-%E7%9A%84%E5%88%86%E5%89%B2%E7%BA%BF/" rel="alternate" type="text/html" title="UITableView 隐藏部分类型 Cell 的分割线" />
-    <published>2020-03-13T18:08:00+08:00</published>
-  
-    <updated>2020-03-13T18:08:00+08:00</updated>
-  
-    <id>https://zhk1024.com/posts/UITableView-%E9%9A%90%E8%97%8F%E9%83%A8%E5%88%86%E7%B1%BB%E5%9E%8B-Cell-%E7%9A%84%E5%88%86%E5%89%B2%E7%BA%BF/</id>
-    <content src="https://zhk1024.com/posts/UITableView-%E9%9A%90%E8%97%8F%E9%83%A8%E5%88%86%E7%B1%BB%E5%9E%8B-Cell-%E7%9A%84%E5%88%86%E5%89%B2%E7%BA%BF/" />
-    <author>
-      <name>ZHK1024</name>
-    </author>
-
-  
-    
-    <category term="开发总结" />
-    
-    <category term="iOS" />
-    
-  
-
-  
-    <summary>
-      
-
-
-
-
-
-      问题
-
-最近项目中遇到同一个 UITableView 第一分区的列表是 卡片样式 不需要分割线, 但是第二分区的样式是 普通样式 , 需要 分割线.
-
-以往有 2 种的做法是:
-
-第一种: 自己绘制分割线
-tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
-
-然后在需要分割线的 Cell 中自己划线, 但是 区首 和 区尾 的分割线宽度是 屏幕宽度 , 其他 Cell 的分割线跟屏幕有 15 的间隔. 这时候就需要区分区首和区尾来进行不同的绘制处理 (也可能是 CALayer/UIView).
-
-
-  一般来说部推荐使用 drawRect: 进行绘制.
-
-
-第二种: 配置相关属性
-
-对不需要分割线的 Cell 进行如下修改:
-
-cell.separatorInset = UIEdgeInsetsMake(0, S...
     </summary>
   
 
