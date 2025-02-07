@@ -1,0 +1,297 @@
+
+
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <id>https://zhk1024.com/</id>
+  <title>ZHK1024</title>
+  <subtitle>A minimal, portfolio, sidebar, bootstrap Jekyll theme with responsive web design and focuses on text presentation.</subtitle>
+  <updated>2025-02-07T13:46:06+08:00</updated>
+  <author>
+    <name>ZHK1024</name>
+    <uri>https://zhk1024.com/</uri>
+  </author>
+  <link rel="self" type="application/atom+xml" href="https://zhk1024.com/feed.xml"/>
+  <link rel="alternate" type="text/html" hreflang="zh-CN"
+    href="https://zhk1024.com/"/>
+  <generator uri="https://jekyllrb.com/" version="4.4.1">Jekyll</generator>
+  <rights> © 2025 ZHK1024 </rights>
+  <icon>/assets/img/favicons/favicon.ico</icon>
+  <logo>/assets/img/favicons/favicon-96x96.png</logo>
+
+
+  
+  <entry>
+    <title>常见文件头收集</title>
+    <link href="https://zhk1024.com/posts/%E6%96%87%E4%BB%B6%E5%A4%B4/" rel="alternate" type="text/html" title="常见文件头收集" />
+    <published>2021-10-27T09:22:00+08:00</published>
+  
+    <updated>2021-10-27T09:22:00+08:00</updated>
+  
+    <id>https://zhk1024.com/posts/%E6%96%87%E4%BB%B6%E5%A4%B4/</id>
+    <content src="https://zhk1024.com/posts/%E6%96%87%E4%BB%B6%E5%A4%B4/" />
+    <author>
+      <name>ZHK1024</name>
+    </author>
+
+  
+    
+    <category term="开发总结" />
+    
+    <category term="iOS" />
+    
+  
+
+  
+    <summary>
+      
+
+
+
+
+
+      常见文件头收集
+
+
+  
+    
+      文件后缀
+      文件头
+    
+  
+  
+    
+      .xlsx
+      50 4B 03 04
+    
+    
+      .xls
+      D0 CF 11 E0 A1 B1 1A E1
+    
+  
+
+
+    </summary>
+  
+
+  </entry>
+
+  
+  <entry>
+    <title>Swift 中 Protocol 和 泛型</title>
+    <link href="https://zhk1024.com/posts/Swift-%E4%B8%AD-Protocol-%E5%92%8C-%E6%B3%9B%E5%9E%8B/" rel="alternate" type="text/html" title="Swift 中 Protocol 和 泛型" />
+    <published>2020-08-29T21:45:00+08:00</published>
+  
+    <updated>2020-08-29T21:45:00+08:00</updated>
+  
+    <id>https://zhk1024.com/posts/Swift-%E4%B8%AD-Protocol-%E5%92%8C-%E6%B3%9B%E5%9E%8B/</id>
+    <content src="https://zhk1024.com/posts/Swift-%E4%B8%AD-Protocol-%E5%92%8C-%E6%B3%9B%E5%9E%8B/" />
+    <author>
+      <name>ZHK1024</name>
+    </author>
+
+  
+    
+    <category term="开发总结" />
+    
+    <category term="iOS" />
+    
+  
+
+  
+    <summary>
+      
+
+
+
+
+
+      前言
+一般在 Swift 中使用 泛型 的时候我们会这么写:
+/// 类
+class AClass&amp;lt;T&amp;gt; {}
+
+/// 结构体
+struct ASctuct&amp;lt;T&amp;gt; {}
+
+/// 枚举
+enum AEnum&amp;lt;T&amp;gt; {}
+
+
+但是如果想在 协议 中使用泛型的时候这么写就会报错:
+protocol AProtocol&amp;lt;T&amp;gt; {}
+
+
+  报错信息:
+
+  Protocols do not allow generic parameters; use associated types instead
+
+
+虽然 泛型 可以在 类, 结构体, 枚举 中使用, 但是某些使用场景中, 如果在 协议 中加入 泛型 的话, 会使我们的代码更加灵活.
+
+尽管 协议 中不支持 泛型, 但是却有个 associatedtype, 各种文章和书籍中都把它翻译为 ...
+    </summary>
+  
+
+  </entry>
+
+  
+  <entry>
+    <title>设置 UIDatePicker 显示日期为中文</title>
+    <link href="https://zhk1024.com/posts/%E8%AE%BE%E7%BD%AE-UIDatePicker-%E6%98%BE%E7%A4%BA%E6%97%A5%E6%9C%9F%E4%B8%BA%E4%B8%AD%E6%96%87/" rel="alternate" type="text/html" title="设置 UIDatePicker 显示日期为中文" />
+    <published>2020-03-24T18:24:00+08:00</published>
+  
+    <updated>2020-03-24T18:24:00+08:00</updated>
+  
+    <id>https://zhk1024.com/posts/%E8%AE%BE%E7%BD%AE-UIDatePicker-%E6%98%BE%E7%A4%BA%E6%97%A5%E6%9C%9F%E4%B8%BA%E4%B8%AD%E6%96%87/</id>
+    <content src="https://zhk1024.com/posts/%E8%AE%BE%E7%BD%AE-UIDatePicker-%E6%98%BE%E7%A4%BA%E6%97%A5%E6%9C%9F%E4%B8%BA%E4%B8%AD%E6%96%87/" />
+    <author>
+      <name>ZHK1024</name>
+    </author>
+
+  
+    
+    <category term="开发总结" />
+    
+    <category term="iOS" />
+    
+  
+
+  
+    <summary>
+      
+
+
+
+
+
+      使用 UIDatePicker 的时候默认语言是 英文, 而我们的项目中又需要修改为 中文. 针对这个问题, 一共有 3 种解决方法, 原则上是选择其一即可.
+
+第一种: 设置 local
+
+UIDatePicker *datePicker = [[UIDatePicker alloc] init];
+datePicker.local = [[NSLocale alloc] initWithLocaleIdentifier:@"zh_CN"]
+
+
+
+  不推荐设置 local , 这样就写死了, 不会根据系统进行对应本地话的设置
+
+
+第二种: 修改 Development Language
+
+再 Info.plist 文件中加入 CFBundleDevelopmentRegion 字段, 设置为 zh_CN.
+
+
+  缺点根第一种相同
+
+
+第三种: 添加语言支持
+
+如图, 添加 中文...
+    </summary>
+  
+
+  </entry>
+
+  
+  <entry>
+    <title> iOS 中 URL 里面的 '#' 后面的 '/' 被解析为路径的解决办法</title>
+    <link href="https://zhk1024.com/posts/iOS-%E4%B8%AD-URL-%E9%87%8C%E9%9D%A2%E7%9A%84-%E5%90%8E%E9%9D%A2%E7%9A%84-%E8%A2%AB%E8%A7%A3%E6%9E%90%E4%B8%BA%E8%B7%AF%E5%BE%84%E7%9A%84%E8%A7%A3%E5%86%B3%E5%8A%9E%E6%B3%95/" rel="alternate" type="text/html" title=" iOS 中 URL 里面的 '#' 后面的 '/' 被解析为路径的解决办法" />
+    <published>2020-03-24T15:09:00+08:00</published>
+  
+    <updated>2020-03-24T15:09:00+08:00</updated>
+  
+    <id>https://zhk1024.com/posts/iOS-%E4%B8%AD-URL-%E9%87%8C%E9%9D%A2%E7%9A%84-%E5%90%8E%E9%9D%A2%E7%9A%84-%E8%A2%AB%E8%A7%A3%E6%9E%90%E4%B8%BA%E8%B7%AF%E5%BE%84%E7%9A%84%E8%A7%A3%E5%86%B3%E5%8A%9E%E6%B3%95/</id>
+    <content src="https://zhk1024.com/posts/iOS-%E4%B8%AD-URL-%E9%87%8C%E9%9D%A2%E7%9A%84-%E5%90%8E%E9%9D%A2%E7%9A%84-%E8%A2%AB%E8%A7%A3%E6%9E%90%E4%B8%BA%E8%B7%AF%E5%BE%84%E7%9A%84%E8%A7%A3%E5%86%B3%E5%8A%9E%E6%B3%95/" />
+    <author>
+      <name>ZHK1024</name>
+    </author>
+
+  
+    
+    <category term="开发总结" />
+    
+    <category term="iOS" />
+    
+  
+
+  
+    <summary>
+      
+
+
+
+
+
+      开发中可能会遇到如下 URL:
+
+https://hostname.com/index.html/#/sign/login
+
+
+这个 URL 中 https://hostname.com/index.html 都是非常常见的, # 的用法可以百度以下. 后面的 sign/login 是要求的格式.
+
+这时候在 iOS 中如果使用 WebView 来加载页面, 可能会加载失败.
+
+此时只需要对 #/sign/login 部分进行 URL 编码, 然后拼接再后面即可.
+
+    </summary>
+  
+
+  </entry>
+
+  
+  <entry>
+    <title>UITableView 隐藏部分类型 Cell 的分割线</title>
+    <link href="https://zhk1024.com/posts/UITableView-%E9%9A%90%E8%97%8F%E9%83%A8%E5%88%86%E7%B1%BB%E5%9E%8B-Cell-%E7%9A%84%E5%88%86%E5%89%B2%E7%BA%BF/" rel="alternate" type="text/html" title="UITableView 隐藏部分类型 Cell 的分割线" />
+    <published>2020-03-13T18:08:00+08:00</published>
+  
+    <updated>2020-03-13T18:08:00+08:00</updated>
+  
+    <id>https://zhk1024.com/posts/UITableView-%E9%9A%90%E8%97%8F%E9%83%A8%E5%88%86%E7%B1%BB%E5%9E%8B-Cell-%E7%9A%84%E5%88%86%E5%89%B2%E7%BA%BF/</id>
+    <content src="https://zhk1024.com/posts/UITableView-%E9%9A%90%E8%97%8F%E9%83%A8%E5%88%86%E7%B1%BB%E5%9E%8B-Cell-%E7%9A%84%E5%88%86%E5%89%B2%E7%BA%BF/" />
+    <author>
+      <name>ZHK1024</name>
+    </author>
+
+  
+    
+    <category term="开发总结" />
+    
+    <category term="iOS" />
+    
+  
+
+  
+    <summary>
+      
+
+
+
+
+
+      问题
+
+最近项目中遇到同一个 UITableView 第一分区的列表是 卡片样式 不需要分割线, 但是第二分区的样式是 普通样式 , 需要 分割线.
+
+以往有 2 种的做法是:
+
+第一种: 自己绘制分割线
+tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
+
+然后在需要分割线的 Cell 中自己划线, 但是 区首 和 区尾 的分割线宽度是 屏幕宽度 , 其他 Cell 的分割线跟屏幕有 15 的间隔. 这时候就需要区分区首和区尾来进行不同的绘制处理 (也可能是 CALayer/UIView).
+
+
+  一般来说部推荐使用 drawRect: 进行绘制.
+
+
+第二种: 配置相关属性
+
+对不需要分割线的 Cell 进行如下修改:
+
+cell.separatorInset = UIEdgeInsetsMake(0, S...
+    </summary>
+  
+
+  </entry>
+
+</feed>
+
+

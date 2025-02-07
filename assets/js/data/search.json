@@ -1,0 +1,1129 @@
+[
+  
+  {
+    "title": "常见文件头收集",
+    "url": "/posts/%E6%96%87%E4%BB%B6%E5%A4%B4/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2021-10-27 09:22:00 +0800",
+    
+
+
+
+
+
+    "snippet": "常见文件头收集            文件后缀      文件头                  .xlsx      50 4B 03 04              .xls      D0 CF 11 E0 A1 B1 1A E1      "
+  },
+  
+  {
+    "title": "Swift 中 Protocol 和 泛型",
+    "url": "/posts/Swift-%E4%B8%AD-Protocol-%E5%92%8C-%E6%B3%9B%E5%9E%8B/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2020-08-29 21:45:00 +0800",
+    
+
+
+
+
+
+    "snippet": "前言一般在 Swift 中使用 泛型 的时候我们会这么写:/// 类class AClass&amp;lt;T&amp;gt; {}/// 结构体struct ASctuct&amp;lt;T&amp;gt; {}/// 枚举enum AEnum&amp;lt;T&amp;gt; {}但是如果想在 协议 中使用泛型的时候这么写就会报错:protocol AProtocol&amp;lt;T&amp;gt; {}  报错信息:  Protocols do not allow generic parameters; use associated types instead虽然 泛型 可以在 类, 结构体, 枚举 中使用, 但是某些使用场景中, 如果在 协议 中加入 泛型 的话, 会使我们的代码更加灵活.尽管 协议 中不支持 泛型, 但是却有个 associatedtype, 各种文章和书籍中都把它翻译为 关联类型. 我们可以使用 associatedtype 来达成 泛型 的目的.正文假设现在有如下 2 个接口:/// 请求老师数据列表/// - page:  分页页码/// - limit: 分页页面容量/// - return: 老师列表数据[POST] https://example.com/teachlist/// 请求老师所教授的科目/// - id:     老师 id/// - page:   分页页码/// - limit:  分页页面容量/// - return: 老师教授的科目数据列表[POST] https://example.com/subjectlistPListable 协议此处定义协议 PListable.Parameters 为网络请求的参数类型, 由于其需要使用 JSONEncoder 对其进行编码, 因此需要实现 Encodable 协议.Result 作为请求方法的返回类型, 由于需要使用 JSONDecoder 对请求到的 Data 进行解码, 因此需要实现 Decodable 协议.requestURL 返回结果为网络请求的 URL 地址.protocol PListable {    /// 参数类型    associatedtype Parameters: Encodable        /// 请求结果类型    associatedtype Result: Decodable        /// 请求地址    static var requestURL: URL? { get }}在协议的 extension 中实现了 static func plist(parameters: Parameters) -&amp;gt; Result? , 该方法为实现该协议的类型提供网络请求的功能实现.extension PListable {        /// 分页的方式请求数据列表    /// - Parameter parameters: 参数对象    /// - Returns: 请求结果    static func plist(parameters: Parameters) -&amp;gt; Result? {        /*         网络请求代码         ...         */        /// 网络请求取到的数据        let data: Data = ...        /// 解析数据        return try? JSONDecoder().decode(Result.self, from: data)    }}  此方法为了更加清晰的表达意图, 未使用 异步, 而是使用了 同步 的直接返回请求结果的写法.  如果了解 协程 的话, 应该就很容易理解这种写法了.参数类型数据结构PLimit 结构为需要 page 和 limit 参数类型的接口提供参数. 依据 PListable 协议中 Parameters 的约束要求实现了 Encodable 协议.struct PLimit: Encodable {        /// 分页页码    let page: Int        /// 分页数据容量    let limit: Int}PLimitWithId 结构对应的为需要 id, page, limit 参数类型的接口提供参数, 同样的实现了 Encodable 协议.struct PLimitWithId: Encodable {        /// 数据查询依赖的 id    let id: Int        /// 分页页码    let page: Int        /// 分页数据容量    let limit: Int}Teacher 为接口 https://example.com/teachlist 返回的数据体部分的数据结构. 根据 PListable 协议中 Result 类型约束的要求实现了 Decodable 协议.数据体数据结构/// 老师对象struct Teacher: Decodable {        /// 姓名    var name: String?        /// 教学科目列表    var subject: [Subject]?}Teacher 实现 PListable 协议, 并在 extension 中给 Parameters 类型关联为 PLimit, Result 类型关联为 [Teacher] 类型.extension Teacher: PListable {    typealias Parameters = PLimit    typealias Result = [Teacher]    static var requestURL: URL? { URL(string: &quot;http://example.com/teachlist&quot;) }}这样 Teacher 就可以调用 static func plist(parameters: Parameters) -&amp;gt; Result? 方法了, 并且其参数类型为 PLimit, 返回类型为 [Teacher] 返回一组 Teacher 类型的数据.对应的, Subject 也与 Teacher 做相同的操作./// 科目对象struct Subject: Decodable {        /// 科目名称    var name: String?}不同的是 Subject 中 Parameters 绑定为 PLimitWithId 类型, Result 绑定为 [Subject] 类型.extension Subject: PListable {        typealias Parameters = PLimitWithId    typealias Result = [Subject]    static var requestURL: URL? { URL(string: &quot;http://example.com/subjectlist&quot;) }}这样 Subject 就同样可以调用 static func plist(parameters: Parameters) -&amp;gt; Result? 方法了, 并且其参数类型为 PLimitWithId, 返回类型为 [Subject] 返回一组 Subject 类型的数据.调用的代码如下:Teacher.plist(parameters: PLimit(page: 0, limit: 20))Subject.plist(parameters: PLimitWithId(id: 101, page: 0, limit: 20))扩展同时 protocol + associatedtype 还可以与 泛型 组合使用:如果我们有如下 Animal 协议 和 结构体 Cat:protocol Animal {    associatedtype `Type`}struct Cat&amp;lt;T&amp;gt; {}extension Cat: Animal {        typealias `Type` = T}Cat 类型接收一个 T 类型的泛型, Cat 在实现 Animal 协议后, 可以把 T 设置为 Type 的关联类型.结语虽然使用 class 的 继承 也能达到类似的效果, 但是 struct 和 enum 却不支持 继承.通过 协议 任何实现 PListable 的类型都拥有了 分页获取数据 的能力.在项目开发中我们往往可能还要有 Deleteable, Updateable … 等等诸多类型的接口, 如果我们都通过 protocol + associatedtype 的方式来为对应类型进行扩展, 不仅能够提升开发效率, 还能降低维护成本."
+  },
+  
+  {
+    "title": "设置 UIDatePicker 显示日期为中文",
+    "url": "/posts/%E8%AE%BE%E7%BD%AE-UIDatePicker-%E6%98%BE%E7%A4%BA%E6%97%A5%E6%9C%9F%E4%B8%BA%E4%B8%AD%E6%96%87/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2020-03-24 18:24:00 +0800",
+    
+
+
+
+
+
+    "snippet": "使用 UIDatePicker 的时候默认语言是 英文, 而我们的项目中又需要修改为 中文. 针对这个问题, 一共有 3 种解决方法, 原则上是选择其一即可.第一种: 设置 localUIDatePicker *datePicker = [[UIDatePicker alloc] init];datePicker.local = [[NSLocale alloc] initWithLocaleIdentifier:@&quot;zh_CN&quot;]  不推荐设置 local , 这样就写死了, 不会根据系统进行对应本地话的设置第二种: 修改 Development Language再 Info.plist 文件中加入 CFBundleDevelopmentRegion 字段, 设置为 zh_CN.  缺点根第一种相同第三种: 添加语言支持如图, 添加 中文简体 支持  推荐这种方式, 一行代码都不用写, 还会根据手机系统所在地区进行本地话的切换.需要哪个地区, 就添加对应国际化文件即可, 文件内也无需写任何内容."
+  },
+  
+  {
+    "title": " iOS 中 URL 里面的 &#39;#&#39; 后面的 &#39;/&#39; 被解析为路径的解决办法",
+    "url": "/posts/iOS-%E4%B8%AD-URL-%E9%87%8C%E9%9D%A2%E7%9A%84-%E5%90%8E%E9%9D%A2%E7%9A%84-%E8%A2%AB%E8%A7%A3%E6%9E%90%E4%B8%BA%E8%B7%AF%E5%BE%84%E7%9A%84%E8%A7%A3%E5%86%B3%E5%8A%9E%E6%B3%95/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2020-03-24 15:09:00 +0800",
+    
+
+
+
+
+
+    "snippet": "开发中可能会遇到如下 URL:https://hostname.com/index.html/#/sign/login这个 URL 中 https://hostname.com/index.html 都是非常常见的, # 的用法可以百度以下. 后面的 sign/login 是要求的格式.这时候在 iOS 中如果使用 WebView 来加载页面, 可能会加载失败.此时只需要对 #/sign/login 部分进行 URL 编码, 然后拼接再后面即可."
+  },
+  
+  {
+    "title": "UITableView 隐藏部分类型 Cell 的分割线",
+    "url": "/posts/UITableView-%E9%9A%90%E8%97%8F%E9%83%A8%E5%88%86%E7%B1%BB%E5%9E%8B-Cell-%E7%9A%84%E5%88%86%E5%89%B2%E7%BA%BF/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2020-03-13 18:08:00 +0800",
+    
+
+
+
+
+
+    "snippet": "问题最近项目中遇到同一个 UITableView 第一分区的列表是 卡片样式 不需要分割线, 但是第二分区的样式是 普通样式 , 需要 分割线.以往有 2 种的做法是:第一种: 自己绘制分割线tableView.separatorStyle = UITableViewCellSeparatorStyleNone;然后在需要分割线的 Cell 中自己划线, 但是 区首 和 区尾 的分割线宽度是 屏幕宽度 , 其他 Cell 的分割线跟屏幕有 15 的间隔. 这时候就需要区分区首和区尾来进行不同的绘制处理 (也可能是 CALayer/UIView).  一般来说部推荐使用 drawRect: 进行绘制.第二种: 配置相关属性对不需要分割线的 Cell 进行如下修改:cell.separatorInset = UIEdgeInsetsMake(0, SCREEN_WIDTH, 0, 0);  此种处理办法虽然可以一定程度上解决我们的问题, 但是 Header 和 Footer 的分割线无法取消.UITableViewCell 的实例对象中, 一般的 Cell 只有 1 条分割线, 区首的 Cell 有 2 根分割线, 顶部分割线 &amp;amp; 底部分割线. 通过 valueForKey: 使用 _topSeparatorView, _separatorView 可以分别获取到分割线对象. 但是要在合适的时机, init 方法内是无法获取到的.经测试, 顶部的 Cell 总是会被复用再第一个位置 (目前测试是这样的), 还未测出其他情况.因此对 _topSeparatorView 和 _separatorView 设置 hidden = YES 可以解决掉 Header 的底部分割线和一般 Cell 的分割线, 区尾的分割线无法隐藏 (原因未知), 使用 Debug View 也找不到底部分割线.解决办法通过遍历 UITableView 的 methodList 发现有如下方法:- (void)setSeparatorColor:(id)arg1;该方法是设置分割线颜色的方法, 如果让此方法失效, 分割线会是什么颜色呢?尝试重写该方法为空实现:- (void)setSeparatorColor:(id)arg1 {}结果来看, 成功解决了 Cell, Header, Footer 的分割线. 目前应该是最简单的处理方法.  不用自己绘制.  处理彻底.  操作简单.如果你页游这样的问题, 可以使用这个方法试一下.  其他提示再 - (void)setSeparatorColor:(id)arg1 中, 传入的 arg1 类型为 UIDeviceRGBColor 类型.通过 super 调用 setSeparatorColor: 会死循环."
+  },
+  
+  {
+    "title": "UIToolBar 约束警告",
+    "url": "/posts/UIToolBar-%E7%BA%A6%E6%9D%9F%E8%AD%A6%E5%91%8A/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2020-03-10 21:28:00 +0800",
+    
+
+
+
+
+
+    "snippet": "问题最近用 UIToolBar 做 UI 需求, 只要一添加 UIBarButtonItem 上去就会有如下警告:[LayoutConstraints] Unable to simultaneously satisfy constraints.	Probably at least one of the constraints in the following list is one you don&#39;t want. 	Try this: 		(1) look at each constraint and try to figure out which you don&#39;t expect; 		(2) find the code that added the unwanted constraint or constraints and fix it. 	(Note: If you&#39;re seeing NSAutoresizingMaskLayoutConstraints that you don&#39;t understand, refer to the documentation for the UIView property translatesAutoresizingMaskIntoConstraints) (    &quot;&amp;lt;NSAutoresizingMaskLayoutConstraint:0x600000f32ad0 _UIToolbarContentView:0x7fdd68555b90.width == 0&amp;gt;&quot;,    &quot;&amp;lt;NSLayoutConstraint:0x600000f31ef0 _UIButtonBarStackView:0x7fdd68556d60.leading == _UIToolbarContentView:0x7fdd68555b90.leading + 20&amp;gt;&quot;,    &quot;&amp;lt;NSLayoutConstraint:0x600000f314a0 _UIButtonBarStackView:0x7fdd68556d60.trailing == _UIToolbarContentView:0x7fdd68555b90.trailing - 20&amp;gt;&quot;)Will attempt to recover by breaking constraint &amp;lt;NSLayoutConstraint:0x600000f314a0 _UIButtonBarStackView:0x7fdd68556d60.trailing == _UIToolbarContentView:0x7fdd68555b90.trailing - 20&amp;gt;Make a symbolic breakpoint at UIViewAlertForUnsatisfiableConstraints to catch this in the debugger.The methods in the UIConstraintBasedLayoutDebugging category on UIView listed in &amp;lt;UIKitCore/UIView.h&amp;gt; may also be helpful.解决办法问题原因是 UIToolBar 初始化时候直接使用了 init 方法.UIToolbar *toolBar = [[UIToolbar alloc] init];使用 initWithFrame: 初始化即可:UIToolbar *toolBar = [[UIToolbar alloc] initWithFrame:CGRectMake(0, 0, CGRectGetWidth(UIScreen.mainScreen.bounds), 44.0f)];警告消失, 问题解决"
+  },
+  
+  {
+    "title": "QMUI: 设置 hidesBottomBarWhenPushed 为 NO 无效",
+    "url": "/posts/QMUI-%E8%AE%BE%E7%BD%AE-hidesBottomBarWhenPushed-%E4%B8%BA-NO-%E6%97%A0%E6%95%88/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2020-02-29 13:55:00 +0800",
+    
+
+
+
+
+
+    "snippet": "QMUI 是一个辅助快速搭建 iOS/Android/Web 应用的 UI 的框架, 本身封装了一些常用的控件和过渡动画等, 并对不同系统版本做了良好的兼容和支持.问题最近公司项目要求使用 QMUIKit 框架来进行开发.当 UIViewController 继承自 QMUICommonViewController 的时候导致 QMUITabBarViewController 的 TabBar 自动隐藏, 设置 hidesBottomBarWhenPushed = NO 也无效的情况.解决办法虽然框架内做了如下描述:  当你需要实现 tabBarController 首页那几个界面显示 tabBar，而 push 进去的所有子界面都隐藏 tabBar 的效果时，可将配置表里的 HidesBottomBarWhenPushedInitially 改为 YES，然后手动将 tabBarController 首页的那几个界面的 hidesBottomBarWhenPushed 属性改为 NO，即可实现。但是直接在生命周期函数内设置均时候无效, 如下:- (void)viewDidLoad {    ...    self.hidesBottomBarWhenPushed = NO;}改为如下写法即可:- (BOOL)hidesBottomBarWhenPushed {    return NO;}  如果有其他特殊需求可以自己增加逻辑. 正常开发也可以利用这种方式自己添加逻辑来控制页面底部的 TabBar 时候隐藏."
+  },
+  
+  {
+    "title": "广点通 SDK 报错: 开屏广告 rootViewController 已经 presenting",
+    "url": "/posts/%E5%B9%BF%E7%82%B9%E9%80%9A-SDK-%E6%8A%A5%E9%94%99-%E5%BC%80%E5%B1%8F%E5%B9%BF%E5%91%8A-rootViewController-%E5%B7%B2%E7%BB%8F-presenting/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2020-02-18 22:54:00 +0800",
+    
+
+
+
+
+
+    "snippet": "问题描述最近有一个应用需要接入 广点通 SDK. 就 SDK 本身接口来说也不多, 结束非常简单, 但是在测试时候发现了 iOS13 系统下, 所有功能一切正常, 但是 iOS12 系统下, 开屏广告不能够正常显示, 并且有以下报错信息:Error Domain=GDTAdErrorDomain Code=4019 &quot;开屏广告 rootViewController 已经 presenting&quot;解决方法报错信息看的是一头雾水, 和 Present 有关的话, 再 App 刚刚启动这段时间里一共有 2 个:  广点通开屏广告的 ViewController.  检测用户是否有 快捷口令, 提示用户的 UIAlertController.尝试屏蔽掉 UIAlertController 之后, 开屏广告 能够正常在 iOS12 上面显示了.此处的解决办法只好再广告展示完成之后再对用户展示提示信息.原因分析通过以下一段代码来做一个实验:- (void)viewDidLoad {    [super viewDidLoad];    self.view.backgroundColor = [UIColor whiteColor];    __weak typeof(self) ws = self;    [[NSNotificationCenter defaultCenter] addObserverForName:UIApplicationDidFinishLaunchingNotification object:nil queue:nil usingBlock:^(NSNotification * _Nonnull note) {        [ws present:[UIColor redColor]];        [ws present:[UIColor yellowColor]];    }];    }/// 模态一个视图控制器/// @param color 控制器视图背景颜色- (void)present:(UIColor *)color {    UIViewController *vc = [[UIViewController alloc] init];    vc.view.backgroundColor = color;    __weak typeof(vc) wv = vc;    [self presentViewController:vc animated:YES completion:^{        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{            [wv dismissViewControllerAnimated:YES completion:nil];        });    }];}测试对比  当运行在 iOS12 系统上时候, 有如下警告信息:          Warning: Attempt to present &amp;lt;UIViewController: 0x10260ad80&amp;gt; on &amp;lt;ViewController: 0x102608870&amp;gt; whose view is not in the window hierarchy!        当运行在 iOS13 系统上时候, 有如下警告信息:          Warning: Attempt to present &amp;lt;UIViewController: 0x104e0b640&amp;gt;  on &amp;lt;ViewController: 0x104e045c0&amp;gt; which is already presenting &amp;lt;UIViewController: 0x104e09b50&amp;gt;      以上 2 种情况的观测结果是一致的, 都只模态出了 红色 背景的视图控制器, 仅仅是 警告信息不同.而造成 警告信息不同 这一结果的就是在 iOS13 之后, UIViewController 的 modalPresentationStyle 属性的默认值变为了 UIModalPresentationAutomatic(立体感的卡片效果), 在此之前默认值是 UIModalPresentationFullScreen (全屏视图覆盖效果).当把 modalPresentationStyle 设为 UIModalPresentationFullScreen 之后, iOS13 系统种也会跟 iOS12 报同样的错误, 也就是同样会出现 开屏广告无法正常展示 的问题.结论虽然知道了造成 iOS12 和 iOS13 效果不同的原因, 但是并未了解到两种警告的意义在细节上有什么不同.第一种警告如果是因为发起 Present 的 Controller.view 已经不在当前 Window 的层次结构中 (模态起来)."
+  },
+  
+  {
+    "title": "Realm 报错闪退: &#39;RLMException&#39;, reason: &#39;Primary key property &#39;identity&#39; does not exist on object &#39;RealmSwiftPermissionUser&#39;&#39;",
+    "url": "/posts/Realm-%E6%8A%A5%E9%94%99%E9%97%AA%E9%80%80-RLMException,-reason-Primary-key-property-identity-does-not-exist-on-object-RealmSwiftPermissionUser/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2020-01-04 14:32:46 +0800",
+    
+
+
+
+
+
+    "snippet": "今天维护旧项目, 调试时候启动就直接闪退, 并有一下报错信息:RLMException&#39;, reason: &#39;Primary key property &#39;identity&#39; does not exist on object &#39;RealmSwiftPermissionUser&#39;&#39;Realm 继承自 RLMObject 或者 Object 的每个类都必须实现如下方法:public override class func primaryKey() -&amp;gt; String {    return &quot;Primary key&quot;}该方法返回本地存储表内作为 主键 属性的属性名.报错信息就是讲 RealmSwiftPermissionUser 这个类未设置 identity 为 func primaryKey() -&amp;gt; String 方法的返回值.全局搜索以下仅仅找到如下一次代码:// 省略部分代码@objc(RealmSwiftPermissionUser)public class PermissionUser: Object {    @objc dynamic public var identity = &quot;&quot;    @objc override public class func primaryKey() -&amp;gt; String {        return &quot;identity&quot;    }}@objc(RealmSwiftPermissionUser) 的作用此处不做介绍.此处已经实现了相关必须方法, 只好更新 Realm 版本.更新后问题得到解决了.据网上查找相关内容, 只有 Xcode11 才有闪退的问题, 有遇到相同问题的更新 Realm 版本即可."
+  },
+  
+  {
+    "title": "iOS 方法内局部变量 (对象) 的内存释放",
+    "url": "/posts/iOS-%E6%96%B9%E6%B3%95%E5%86%85%E5%B1%80%E9%83%A8%E5%8F%98%E9%87%8F-(%E5%AF%B9%E8%B1%A1)-%E7%9A%84%E5%86%85%E5%AD%98%E9%87%8A%E6%94%BE/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2019-12-01 17:52:00 +0800",
+    
+
+
+
+
+
+    "snippet": "描述最早被人问及 iOS 方法内的 局部变量 是在什么时机释放的时候, 肤浅的认为: 可能编译器给每个方法都加了 自动释放池?后来随着成长, 发现事实并没有自己当初想象的那么简单. 虽然网上有很多从源码方面总结 局部变量 内存相关的文章, 但是都是从源码的角度来分析的, 今天正好有空, 就从更深入的地方来探索一番, 整理一下思路.今天的主角就是下面这段代码:- (void)memoryReleaseTest {    NSObject *obj = nil;    obj = [[NSObject alloc] init];    NSObject *p = obj;}正文准备工作  在 memoryReleaseTest 方法的第一行打断点  在 Xcode 中选择 Debug -&amp;gt; Debug Workflow -&amp;gt; Always Show Disassembly 并勾选  在 viewDidLoad 中调用 memoryReleaseTest (保证方法被调用即可)然后在运行之后就能看到如下 arm64 汇编代码 (真机运行).Demo`-[ViewController memoryReleaseTest]:    0x104d550a8 &amp;lt;+0&amp;gt;:   sub    sp, sp, #0x30             ; =0x30     0x104d550ac &amp;lt;+4&amp;gt;:   stp    x29, x30, [sp, #0x20]    0x104d550b0 &amp;lt;+8&amp;gt;:   add    x29, sp, #0x20            ; =0x20     0x104d550b4 &amp;lt;+12&amp;gt;:  adrp   x8, 8    0x104d550b8 &amp;lt;+16&amp;gt;:  add    x8, x8, #0xa00            ; =0xa00     0x104d550bc &amp;lt;+20&amp;gt;:  stur   x0, [x29, #-0x8]    0x104d550c0 &amp;lt;+24&amp;gt;:  str    x1, [sp, #0x10]    0x104d550c4 &amp;lt;+28&amp;gt;:  mov    x0, #0x0    0x104d550c8 &amp;lt;+32&amp;gt;:  str    x0, [sp, #0x8]    0x104d550cc &amp;lt;+36&amp;gt;:  ldr    x8, [x8]    0x104d550d0 &amp;lt;+40&amp;gt;:  mov    x0, x8    0x104d550d4 &amp;lt;+44&amp;gt;:  bl     0x104d561d0               ; symbol stub for: objc_alloc    0x104d550d8 &amp;lt;+48&amp;gt;:  adrp   x8, 8    0x104d550dc &amp;lt;+52&amp;gt;:  add    x8, x8, #0x9a8            ; =0x9a8     0x104d550e0 &amp;lt;+56&amp;gt;:  ldr    x1, [x8]    0x104d550e4 &amp;lt;+60&amp;gt;:  bl     0x104d56200               ; symbol stub for: objc_msgSend    0x104d550e8 &amp;lt;+64&amp;gt;:  ldr    x8, [sp, #0x8]    0x104d550ec &amp;lt;+68&amp;gt;:  str    x0, [sp, #0x8]    0x104d550f0 &amp;lt;+72&amp;gt;:  mov    x0, x8    0x104d550f4 &amp;lt;+76&amp;gt;:  bl     0x104d56224               ; symbol stub for: objc_release    0x104d550f8 &amp;lt;+80&amp;gt;:  ldr    x8, [sp, #0x8]    0x104d550fc &amp;lt;+84&amp;gt;:  mov    x0, x8    0x104d55100 &amp;lt;+88&amp;gt;:  bl     0x104d56230               ; symbol stub for: objc_retain    0x104d55104 &amp;lt;+92&amp;gt;:  str    x0, [sp]    0x104d55108 &amp;lt;+96&amp;gt;:  mov    x8, sp    0x104d5510c &amp;lt;+100&amp;gt;: mov    x0, x8    0x104d55110 &amp;lt;+104&amp;gt;: mov    x8, #0x0    0x104d55114 &amp;lt;+108&amp;gt;: mov    x1, x8    0x104d55118 &amp;lt;+112&amp;gt;: bl     0x104d56248               ; symbol stub for: objc_storeStrong    0x104d5511c &amp;lt;+116&amp;gt;: add    x8, sp, #0x8              ; =0x8     0x104d55120 &amp;lt;+120&amp;gt;: mov    x0, x8    0x104d55124 &amp;lt;+124&amp;gt;: mov    x8, #0x0    0x104d55128 &amp;lt;+128&amp;gt;: mov    x1, x8    0x104d5512c &amp;lt;+132&amp;gt;: bl     0x104d56248               ; symbol stub for: objc_storeStrong    0x104d55130 &amp;lt;+136&amp;gt;: ldp    x29, x30, [sp, #0x20]    0x104d55134 &amp;lt;+140&amp;gt;: add    sp, sp, #0x30             ; =0x30     0x104d55138 &amp;lt;+144&amp;gt;: ret    这段代码如果看不懂 arm64 汇编也没关系, 我们只挑能看懂的看即可, 影响不大.省略掉栈空间操作相关指令后, 我们需要分析的指令代码如下:0x000000000 &amp;lt;+44&amp;gt;:  bl     0x104d561d0               ; symbol stub for: objc_alloc    0x000000001 &amp;lt;+60&amp;gt;:  bl     0x104d56200               ; symbol stub for: objc_msgSend    0x000000002 &amp;lt;+76&amp;gt;:  bl     0x104d56224               ; symbol stub for: objc_release 0x000000003 &amp;lt;+88&amp;gt;:  bl     0x104d56230               ; symbol stub for: objc_retain   0x000000004 &amp;lt;+112&amp;gt;: bl     0x104d56248               ; symbol stub for: objc_storeStrong    0x000000005 &amp;lt;+132&amp;gt;: bl     0x104d56248               ; symbol stub for: objc_storeStrong0x000000006 &amp;lt;+144&amp;gt;: ret   省略掉的代码都是栈区 栈空间拉伸, 栈平衡, 寄存器存储 等指令, 忽略也不影响理解.为了方便理解, 把指令地址也替换为了 0x000000000 ~ 0x000000006 这样的序号.  解释bl 是跳转指令, 可以简单理解为方法调用.ret 指令可以简单的理解为代码中的 return, 函数执行到这个地方就结束了.分析指令0x000000000 指令分析0x000000000 &amp;lt;+44&amp;gt;:  bl     0x104d561d0               ; symbol stub for: objc_alloc这条指令根据符号备注可以知道是调用了 objc_alloc 方法.在控制台执行如下指令:  提示因为汇编层面不存在 实参 形参 的概念, 函数传参是直接由 x0, x1, x2 ... 来存储传入的 第0个, 第1个, 第2个 ... 参数. 当然, 当一个函数有多个参数的时候, 会有其他传参方法, 此处不做解释.  上图读取 x0 寄存器目的是为了获取 objc_alloc 传入的参数. 由函数名我们就可以知道他是为一个对象分配一段内存空间.可以得知 x0 寄存器内存储的地址对应的内容为 NSObject. 也就是对应了如下代码:[NSObject alloc]0x000000001 指令分析0x000000001 &amp;lt;+60&amp;gt;:  bl     0x104d56200               ; symbol stub for: objc_msgSend这条指令, 了解过 runtime 的应该对 objc_msgSend 都不陌生.在控制台执行如下指令由 x0, x1 寄存器内容, 可以了解到 objc_msgSend 传入的内容为: NSObject 实例对象的地址 和 init 字符串 (SEL 类型的本质就是 C 字符串).x1 寄存器存储的内存地址为 0x00000001c91b2a3b, 在该地址之后紧接着的 4 个字节里面存储的内容为: 69 6e 69 74 实际上是 i n i t 4个字符的 ASCII 码的 16 进制.到此为止 0x000000000 和 0x000000001 2 条指令就是我们的代码:[[NSObject alloc] init]  提示objc_msgSend 方法类型是这样的: objc_msgSend(id _Nullable self, SEL _Nonnull op, ...)  po 为打印对象, x 读取内存, 均为 lldb 指令, 可以另作了解0x000000002 指令分析0x000000002 &amp;lt;+76&amp;gt;:  bl     0x104d56224               ; symbol stub for: objc_release这条指令是调用了 objc_release 这个方法. 我们差看一下这条指令释放的是哪个对象:在这个地方给 objc_release 函数传入的地址为 0x0000000000000000, 也就是传入的是 nil.这个地方之所以有这么一条指令其实是因为我们的代码:NSObject *obj = nil;obj 指针初始化时候赋值为 nil, 因为在把其他对象的指针赋值给 obj 的时候, 就要对应的对原来 obj 所指向的内存地址的对象执行一次 release 操作.0x000000003 指令分析0x000000003 &amp;lt;+88&amp;gt;:  bl     0x104d56230               ; symbol stub for: objc_retain这个地方调用了 objc_retain 函数对某个对象执行了 retain 操作, 我猜应该是我们上面初始化的 NSObject 对象.打印一下 x0 寄存器的内容:如猜测得一样, 这个对 NSObject 对象执行了 release 操作. 对应了我们的赋值操作:NSObject *p = obj;也正好印证了: 在 ARC 下, 指针默认是 __storng 类型, 赋值时候, 对应的对象会被 retain 一次.0x000000004 &amp;amp; 0x000000005 指令分析这 2 条指令一模一样, 就放在一起分析了0x000000004 &amp;lt;+112&amp;gt;: bl     0x104d56248               ; symbol stub for: objc_storeStrong    0x000000005 &amp;lt;+132&amp;gt;: bl     0x104d56248               ; symbol stub for: objc_storeStrong在这个方法将要结束的地方调用了 2 次 objc_storeStrong 函数.objc_storeStrong 函数的实现如下:void objc_storeStrong(id *location, id obj) {    id prev = *location;    if (obj == prev) {        return;    }    objc_retain(obj);    *location = obj;    objc_release(prev);}函数有点像我们在 MRC 下的 Setter 方法.查看一下这 2 次调用传入的参数是什么内容:这个地方略为特殊, objc_storeStrong 的第一个参数 location 为 id * 类型, 也就是 二级指针. 因此 x0 寄存器读取到的内存地址 0x000000016f08dc30 里面放的内容才是传入参数的本体.本次测试的机器为 XR 为 64 位架构的 CPU, 因此指针所占用的内存空间为 8 个字节, 如图种红框所示. 所以我们需要的对象的真实地址为 0x0280d08000 (省略掉了头部的 0).因此得知传入的第一个参数的本体实际上就是 NSObject 对象.x1 寄存器内容为 0x0000000000000000, 也就是第二个参数是 nil.因此在 objc_storeStrong 内部 NSObject 对象会被 release 一次.  总结此处调用了 2 次 objc_storeStrong 函数, NSObject 就被 release 2次, 对应了 alloc 和 p 指针赋值之后的 retain 操作. 随着 obj 和 p 指针被置为 nil, NSObject 对象的生命周期也到此结束了.0x000000006 指令分析0x000000006 &amp;lt;+144&amp;gt;: ret 函数返回指令, 指令跳转到 PC 寄存器所指向的指令地址. 至此 memoryReleaseTest 方法执行结束. 进入到 viewDidLoad 方法内的下一句代码的执行流程.总结在 ARC 环境下, 方法在将要执行结束的时候, 局部变量的指针都会被置为 nil, 此时在 objc_storeStrong 函数内部, 被局部变量强引用的对象会被执行 release 操作. 最终对象是否会被释放还是要取决于是否依旧有其他指针强引用 (比如: 全局变量/属性 等).在 MRC 环境下, 汇编代码就干净的多, obj 和 p 引用 NSObject 对象时候不会执行 retain 操作, 在方法执行结束的时候也不会因为被置为 nil 而对 NSObject 执行 release 操作 (况且也不会被自动置为 nil). 因此在 MRC 下, 如果开发者不主动对对象执行 release/autorelease 操作, 对象就会一直存在于内存中. 并随着方法的结束, 局部变量的指针被释放, 对象就再也无法得到释放, 发生内存泄露.附加内容顺便附上 MRC 的汇编:Demo `-[ViewController memoryReleaseTest]:    0x1007f5268 &amp;lt;+0&amp;gt;:  sub    sp, sp, #0x30             ; =0x30     0x1007f526c &amp;lt;+4&amp;gt;:  stp    x29, x30, [sp, #0x20]    0x1007f5270 &amp;lt;+8&amp;gt;:  add    x29, sp, #0x20            ; =0x20     0x1007f5274 &amp;lt;+12&amp;gt;: adrp   x8, 8    0x1007f5278 &amp;lt;+16&amp;gt;: add    x8, x8, #0x9f8            ; =0x9f8     0x1007f527c &amp;lt;+20&amp;gt;: stur   x0, [x29, #-0x8]    0x1007f5280 &amp;lt;+24&amp;gt;: str    x1, [sp, #0x10]    0x1007f5284 &amp;lt;+28&amp;gt;: mov    x0, #0x0    0x1007f5288 &amp;lt;+32&amp;gt;: str    x0, [sp, #0x8]    0x1007f528c &amp;lt;+36&amp;gt;: ldr    x8, [x8]    0x1007f5290 &amp;lt;+40&amp;gt;: mov    x0, x8    0x1007f5294 &amp;lt;+44&amp;gt;: bl     0x1007f61ac               ; symbol stub for: objc_alloc_init    0x1007f5298 &amp;lt;+48&amp;gt;: str    x0, [sp, #0x8]    0x1007f529c &amp;lt;+52&amp;gt;: ldr    x8, [sp, #0x8]    0x1007f52a0 &amp;lt;+56&amp;gt;: str    x8, [sp]    0x1007f52a4 &amp;lt;+60&amp;gt;: ldp    x29, x30, [sp, #0x20]    0x1007f52a8 &amp;lt;+64&amp;gt;: add    sp, sp, #0x30             ; =0x30     0x1007f52ac &amp;lt;+68&amp;gt;: ret    "
+  },
+  
+  {
+    "title": "UIWebView 已经彻底被苹果抛弃了",
+    "url": "/posts/UIWebView-%E5%B7%B2%E7%BB%8F%E5%BD%BB%E5%BA%95%E8%A2%AB%E8%8B%B9%E6%9E%9C%E6%8A%9B%E5%BC%83%E4%BA%86/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2019-11-22 13:18:00 +0800",
+    
+
+
+
+
+
+    "snippet": "昨天提交更新新版本, 然后就收到了苹果的邮件, 邮件内容如下:  Dear Developer,  We identified one or more issues with a recent delivery for your app, “xxx” . Your delivery was successful, but you may wish to correct the following issues in your next delivery:  ITMS-90809: Deprecated API Usage - Apple will stop accepting submissions of apps that use UIWebView APIs . See https://developer.apple.com/documentation/uikit/uiwebview for more information.  After you’ve corrected the issues, you can upload a new binary to App Store Connect.  Best regards,  The App Store Team大致就是讲我的应用中使用了 UIWebView 相关的 API. 将来苹果会拒绝这样的 App.看了一下官方文档, UIWebView 在 iOS13 中已经被苹果弃用, 虽然暂时也并不影响正常使用.既然已经弃用了, 就全部修改成使用 WKWebView 吧.以后新功能, 新项目也要注意这一点."
+  },
+  
+  {
+    "title": "iOS13 中修改 UITabbarItem 字体颜色",
+    "url": "/posts/iOS13-%E4%B8%AD%E4%BF%AE%E6%94%B9-UITabbarItem-%E5%AD%97%E4%BD%93%E9%A2%9C%E8%89%B2/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2019-10-25 21:12:00 +0800",
+    
+
+
+
+
+
+    "snippet": "解决问题解决 UITabbarItem 自定义字体颜色在 iOS13 中失效的问题.问题描述以前都通过以下代码来全局修改 UITabbarItem 标题的颜色, 当然你也可以单个分别设置.// 未选中时候标题的颜色[[UITabBarItem appearance] setTitleTextAttributes:@{NSForegroundColorAttributeName : [UIColor blackColor]} forState:UIControlStateNormal];// 被选中后标题的颜色[[UITabBarItem appearance] setTitleTextAttributes:@{NSForegroundColorAttributeName : [UIColor redColor]]} forState:UIControlStateSelected];但是这种做法在 iOS13 上失效了. 既然失效了, 只好寻找新的解决方法了.解决方法最终在 stackoverflow 找到了解决方法 原文地址.iOS13 之后, 苹果提供了新类 UITabBarAppearance 来设置 UITabBar 相关的自定义样式. 对应 UITabBar 的 standardAppearance 属性.UITabBarAppearance 的 stackedLayoutAppearance 属性类型为 UITabBarItemAppearance 就是专门用于自定义 UITabBarItem 样式的.设置方法如下:UITabBarAppearance *appearance = [[UITabBarAppearance alloc] init];// 未选中时候图标的颜色appearance.stackedLayoutAppearance.normal.iconColor = COLOR_333333;// 未选中时候标题颜色appearance.stackedLayoutAppearance.normal.titleTextAttributes = @{NSForegroundColorAttributeName : COLOR_333333};// 选中时候标题的颜色appearance.stackedLayoutAppearance.selected.titleTextAttributes = @{NSForegroundColorAttributeName : SKIN_COLOR};self.tabBar.standardAppearance = appearance;"
+  },
+  
+  {
+    "title": "Xcode11 的工程如何修改成老工程",
+    "url": "/posts/Xcode11-%E7%9A%84%E5%B7%A5%E7%A8%8B%E5%A6%82%E4%BD%95%E4%BF%AE%E6%94%B9%E6%88%90%E8%80%81%E5%B7%A5%E7%A8%8B/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2019-10-19 10:35:00 +0800",
+    
+
+
+
+
+
+    "snippet": "Xcode 11 也发布了一段时间了, 老项目跑起来都没问题, 但是 Xcode 11 新建的工程导入以前老的库却会出现一些小问题.因此可能把工程改成 Xcode 10 时候的工程会更好一些.正文修改为原来的工程分为 5 步:第一步: 修改 Info.plist干掉关于 SceneDelegate 的配置信息. 直接在 Info.plist 中删除该字段即可.第二步: 修改 AppDelegate新版本的工程中, AppDelegate.h 是这样的@interface AppDelegate : UIResponder &amp;lt;UIApplicationDelegate&amp;gt;@end给他加上 window 属性:@interface AppDelegate : UIResponder &amp;lt;UIApplicationDelegate&amp;gt;@property (nonatomic, strong) UIWindow *window;@end  提醒缺少这一步的话, 启动之后就是黑屏, 会报如下错误:[Application] The app delegate must implement the window property if it wants to use a main storyboard file.第三步: 删除多余文件干掉 SceneDelegate.h 和 SceneDelegate.m 文件. 因为对你已经无用了.第四步: 删除无用的方法AppDelegate.m 中有 2 个新的以前没见过的方法:- (UISceneConfiguration *)application:(UIApplication *)application configurationForConnectingSceneSession:(UISceneSession *)connectingSceneSession options:(UISceneConnectionOptions *)options;- (void)application:(UIApplication *)application didDiscardSceneSessions:(NSSet&amp;lt;UISceneSession *&amp;gt; *)sceneSessions;以上 2 个方法是 UISceneSession 生命周期函数, 直接删掉就好了.  提示 如果不删除掉, 跑起来也依旧是黑屏. 并且没有任何报错信息.第五步: 添加相关生命周期的方法AppDelegate.m 文件中自己手动添加相关的生命周期函数即可.结束到此就算搞完了, 你的项目就可以正常跑起来了."
+  },
+  
+  {
+    "title": "更新 macOS 10.15 之后 Cocoapods 无法使用的解决办法",
+    "url": "/posts/%E6%9B%B4%E6%96%B0-macOS-10.15-%E4%B9%8B%E5%90%8E-Cocoapods-%E6%97%A0%E6%B3%95%E4%BD%BF%E7%94%A8%E7%9A%84%E8%A7%A3%E5%86%B3%E5%8A%9E%E6%B3%95/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2019-10-16 14:34:00 +0800",
+    
+
+
+
+
+
+    "snippet": "前几天 macOS 10.15 Catalina 推送更新之后就第一时间更新了.但是今天发现 Cocoapods 无法使用了:$ pod search opencvzsh: /usr/local/bin/pod: bad interpreter: /System/Library/Frameworks/Ruby.framework/Versions/2.3/usr/bin/ruby: no such file or directory并且pod --version也执行报错.一开始以为是更新系统后 Cocoapods 被干掉了, 于是执行安装命令:$ brew install cocoapods大概 5 分钟后得到了如下信息:Error: The `brew link` step did not complete successfullyThe formula built, but is not symlinked into /usr/localCould not symlink bin/podTarget /usr/local/bin/podalready exists. You may want to remove it:  rm &#39;/usr/local/bin/pod&#39;本来是准备卸载重装的, 手一抖, 按错, 重复执行了安装命令, 得到如下信息:$ brew install cocoapodsWarning: cocoapods 1.8.3 is already installed, it&#39;s just not linkedYou can use `brew link cocoapods` to link this version.按照指引执行:$ brew link cocoapodsLinking /usr/local/Cellar/cocoapods/1.8.3...Error: Could not symlink bin/podTarget /usr/local/bin/podalready exists. You may want to remove it:  rm &#39;/usr/local/bin/pod&#39;To force the link and overwrite all conflicting files:  brew link --overwrite cocoapodsTo list all files that would be deleted:  brew link --overwrite --dry-run cocoapods结果依旧.加上路径试试??$ brew link /usr/local/bin/podError: can&#39;t find gem cocoapods (&amp;gt;= 0.a) with executable pod然后开始百度, 看网上其他帖子猜测应该是新版本的系统, 目录发生了变更导致的, 重装应该能解决问题.卸载重装卸载 Cocoapods$ sudo gem uninstall cocoapodsPassword:Gem &#39;cocoapods&#39; is not installed安装 Cocoapods$ sudo gem install cocoapods然后就继续执行 卸载 和 重装, 问题果然得到了解决.$ pod --version1.8.3"
+  },
+  
+  {
+    "title": "MacBook Pro 键盘按键失灵",
+    "url": "/posts/MacBook-Pro-%E9%94%AE%E7%9B%98%E6%8C%89%E9%94%AE%E5%A4%B1%E7%81%B5/",
+    "categories": "开发总结, 日常",
+    "tags": "",
+    "date": "2019-10-15 17:42:00 +0800",
+    
+
+
+
+
+
+    "snippet": "问题描述之前对 MacBook Pro 2015 的硬盘进行升级之后, 就发现键盘上的按钮 A ~ L 和 T, G, B, Y, H, N 几个键位无效了. 看到网上有类似的问题解决方案有以下几种:  硬件损坏(比如: 排线出问题了).  重置 NVRAM (怎么做可以百度, 我的试了几次都毫无效果).  软件冲突.最近回忆了一下也没有装什么软件, 就忽略了 软件冲突 这条.以为是拆机时候不小心触到了 键盘排线, 把 排线 搞出问题了, 但是网友一般出现这种问题问题的时候一般都伴随着触摸板也有一定的问题, 我的触摸板完全正常, 硬件检测也正常. 其他方面的也毫无头绪, 只好先暂时配了个外接键盘.解决过程但是, 今天 外接键盘 的按键也全部失灵了, 出了 Command, Space 等功能性的按键还有效.在随机测试按键的过程中触发了切换输入法, 发现个别按钮开始可以输入内容了. 这才意识到有可能是输入法引起的问题.  打开 输入法偏好设置 .  选中 搜狗输入法 后, 面板上面显示 键盘布局不可用.  禁用 搜狗输入法.  启用 简体拼音 (macOS 自带的中文输入法).实验结果发现完全能够正常输入, 这才知道问题是出在了 搜狗输入法. 网上查了一下, 不止我一个人遇到 搜狗输入法 的这个坑.于是完全卸载搜狗, 彻底卸载还需要删除掉以下 3 个文件:  /Library/Input\\ Methods/SogouInput.app  /Users/user/Library/Caches/SogouServices  /Users/user/.sogouinput  提示路径中的 Users 一般来说是你的用户名, 比如我的 Mac 名称叫做 ZHK, 那么路径就是 /ZHK/user/.sogouinput 要根据具体情况来处理.如果仅仅从 偏好设置 里面移出输入法的话, 输入法是依残留在系统内部的, 直接删除掉这些文件.有网友说 百度输入法 没有问题， 但是安装之后当场解决了问题, 但是重启后问题就又出现了.暂时只能先用系统自带输入法过渡一下了, 之后发现有什么解决办法再补充吧."
+  },
+  
+  {
+    "title": "Unity 中如何关闭 UI 的用户交互开关",
+    "url": "/posts/Unity-%E4%B8%AD%E5%A6%82%E4%BD%95%E5%85%B3%E9%97%AD-UI-%E7%9A%84%E7%94%A8%E6%88%B7%E4%BA%A4%E4%BA%92%E5%BC%80%E5%85%B3/",
+    "categories": "开发总结, Unity",
+    "tags": "",
+    "date": "2019-10-14 13:23:00 +0800",
+    
+
+
+
+
+
+    "snippet": "在进行 Unity 3D 的 UI 界面发开时候, 可能会遇到禁用某些控件的 用户交互.  比如: 当前的 角色属性界面 已经打开了, 此时用户点击主界面上的 技能图标 就不能再响应用户的点击事件了.透明层以前的做法可能就是在 角色属性界面 背景上添加一个透明层来阻断用户的点击事件.Canvas Group 组件另外一个做法, 就是使用 Unity 提供的 Canvas Group 组件:Canvas Group 组件一共有 4 个属性:  Alpha: 可以用来控制组件的透明度, 其值为 0 ~ 1.  Interactable: 是否接受用户交互事件, 设置为 false 的时候, 交互功能就会被禁用.  Blocks Raycasts: 如果需要图形射线(GraphicRaycaster)检测. 值为 true 时, 可将此组件作为一个射线碰撞盒. 但是, 不适用于Physics.Raycast.  Ignore Parent Group: 是否响应父级 group 的方法.因此如果要禁用交互的话, 只需要 Interactable = false 即可.当然 Blocks Raycasts = false 也可以起到想同的作用."
+  },
+  
+  {
+    "title": "iOS 13 之后 Masonry 使用上面的一些注意事项 (动画效果未达预期)",
+    "url": "/posts/iOS-13-%E4%B9%8B%E5%90%8E-Masonry-%E4%BD%BF%E7%94%A8%E4%B8%8A%E9%9D%A2%E7%9A%84%E4%B8%80%E4%BA%9B%E6%B3%A8%E6%84%8F%E4%BA%8B%E9%A1%B9-(%E5%8A%A8%E7%94%BB%E6%95%88%E6%9E%9C%E6%9C%AA%E8%BE%BE%E9%A2%84%E6%9C%9F)/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2019-10-05 14:43:00 +0800",
+    
+
+
+
+
+
+    "snippet": "昨天用户反馈在 iOS 13 的系统下, 我的一个 App 的部分功能不能够正常工作了:      页面返回按钮不见了 (自定义的导航栏动画执行结果出错).    底部按钮被挤压了 (自定义的 Bar 动画执行结果出错).  自定义导航栏 和 底部按钮的 Bar 就像平时的 电子书/漫画 App 一样, 通过点击屏幕终于进行 显示/隐藏.首先, 自定义导航栏 和 底部按钮的Bar 约束如下:// 自定义导航栏// 其实就是个 UIView, 通过动画来显示和隐藏[_navBar mas_makeConstraints:^(MASConstraintMaker *make) {    make.left.right.mas_equalTo(0.0f);    make.top.mas_equalTo(-height);    make.height.mas_equalTo(height);}];// 像 TabBar 一样的 UIView 自定义, 也是通过动画来显示和隐藏[_actionBar mas_makeConstraints:^(MASConstraintMaker *make) {    make.left.right.mas_equalTo(0.0f);    make.top.equalTo(self.view.mas_bottom);    make.height.mas_equalTo(49.0f);}];首先, 显示的动画是有问题的, 代码如下:- (void)showBars {    // 做一些判断, 方式用户连续点击造成动画出错.    if (_barAnimating == YES || _barShown) {        return;    }    _barShown = YES;    _navBar.hidden = NO;    _actionBar.hidden = NO;    _barAnimating = YES;    // nav frame    CGRect navFrame = _navBar.frame;    navFrame.origin.y = 0.0f;    // action bar frame    CGRect actionFrame = _actionBar.frame;    actionFrame.size.height = 49.0f + self.view.safeAreaInsets.bottom;    actionFrame.origin.y = CGRectGetHeight(self.view.bounds) - CGRectGetHeight(actionFrame);    [UIView animateWithDuration:0.3f animations:^{        self.navBar.frame = navFrame;        self.actionBar.frame = actionFrame;    } completion:^(BOOL finished) {        self.barAnimating = NO;        self.barShown     = YES;    }];}基本就是通过 UIView 动画让 navBar 和 actionBar 滑动出现/消失.在 iOS 11 和 iOS 12 上面一切工作正常, 但是在 iOS 13 上面却出现了问题.  通过调试之后发现问题如下:      navBar 根本没出现 (frame 没有发生变化, 动画结果与预期不符).    actionBar 只有一部分出现, 还有一部分处于屏幕之外, 因此看起来像是被挤压了一样.  此时猜测是不是 约束 造成的问题. (因为以前写 自定义键盘扩展 时候遇到过类似的情况, 因为约束的原因, 无论如何修改 frame 结果始终与预期不符).然后我就尝试的使用约束来做动画, 把动画部分的代码修改如下:[UIView animateWithDuration:0.3f animations:^{    // 修改 navBar 顶部约束    [self.navBar mas_updateConstraints:^(MASConstraintMaker *make) {        make.top.mas_equalTo(0);    }];    // 修改 actionBar 底部约束    [self.actionBar mas_updateConstraints:^(MASConstraintMaker *make) {        make.bottom.mas_equalTo(0);    }];    [self.view layoutIfNeeded];} completion:^(BOOL finished) {    self.barAnimating = NO;    self.barShown     = YES;}];actionBar 约束改为对 bottom 进行约束, 因为一开始是对 top 进行的约束:[_actionBar mas_makeConstraints:^(MASConstraintMaker *make) {    // 其他约束    // ...    // 对 bottom 进行约束    make.bottom.mas_equalTo(CGRectGetHeight(_actionBar.bounds));}];代码执行的结果是符合预期了, 但是页面内容会 闪烁. 显然还是不行.最后尝试对 navBar 和 actionBar 使用 frame 来进行定位:CGFloat height = CGRectGetMaxY(self.navigationController.navigationBar.frame);// navBar_navBar.frame = CGRectMake(0, -height, CGRectGetWidth(self.view.bounds), height);// actionBar_actionBar.frame = CGRectMake(0, CGRectGetHeight(self.view.bounds), CGRectGetWidth(self.view.bounds), 49);UIView 动画部分还原成最早修改 frame 的方法.执行结果达到预期, 页面也不闪烁了.至此问题就算是解决了.造成这个问题的原因应该是 iOS 13 更新之 对自动布局 应该有一些变化吧(暂时未深究其原因), 后面再做项目得注意这一点."
+  },
+  
+  {
+    "title": "iOS 开发关于暗黑模式 (Dark Model) 的问题",
+    "url": "/posts/iOS-%E5%BC%80%E5%8F%91%E5%85%B3%E4%BA%8E%E6%9A%97%E9%BB%91%E6%A8%A1%E5%BC%8F-(Dark-Model)-%E7%9A%84%E9%97%AE%E9%A2%98/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2019-10-01 21:59:25 +0800",
+    
+
+
+
+
+
+    "snippet": "问题iOS 13 中苹果终于引入了 暗黑模式 (Dark model). 这一特性虽然让人兴奋, 但是开发者在刚接触的时候也遇到了一些问题.  虽然已经发布的 App 在 Dark model 下没有任何问题 (默认关闭 Dark model). 但是我们的 新项目 和 老项目使用 Xcode 11 编译之后 部分控件使用了原生默认配置, 就会出现部分控件自动适配了 Dark model, 但是我们的自定义控件依旧是自定义的样式, 导致整体 UI 看起来不协调.解决办法解决这个问题有 2 个办法:  为 App 适配 Dark Model 的样式.  关闭工程的 Dark Model, 让其只支持我们原本的样式, 不对 Dark Model 自动适配.适配 Dark Model适配 Dark Model 需要公司 UI 为 Dark Model 专门设计一套 UI. 估计大部分公司不会费这种洋工夫.关闭 Dark Model1. 关闭工程的 Dark Model 很简单.在 Info.plist 文件中添加字段 User Interface Style 其值设置为 Light. 这样系统就不会为你提供默认的 Dark Model 的适配了.2. 关闭部分控制器的 Dark Model在 iOS 13 中，UIView, UIViewController, UIWindow 新增了一个 overrideUserInterfaceStyle 的属性.overrideUserInterfaceStyle 属性可以强制设置当前 视图 以及 子视图 的模式.view.overrideUserInterfaceStyle = UIUserInterfaceStyleLight;就可以使 view 以及其 子视图 的模式总是 Light 模式. 想同的 Dark 模式也是同理."
+  },
+  
+  {
+    "title": "升级 iOS 13 之后好像更加耗电了(解决办法) ",
+    "url": "/posts/%E5%8D%87%E7%BA%A7-iOS-13-%E4%B9%8B%E5%90%8E%E5%A5%BD%E5%83%8F%E6%9B%B4%E5%8A%A0%E8%80%97%E7%94%B5%E4%BA%86(%E8%A7%A3%E5%86%B3%E5%8A%9E%E6%B3%95)/",
+    "categories": "日常",
+    "tags": "",
+    "date": "2019-09-21 13:40:11 +0800",
+    
+
+
+
+
+
+    "snippet": "昨天凌晨 1 点多看到 iOS 13 正式版可以更新了, 就第一时间下载更新了.昨天使用一天的体会就是: 耗电比 iOS12 快多了.因为 6s 目前一充电就自动开机关机循环, 就把主力机换成了去年买来当测试机的 XR.XR 之前使用的是 iOS 12.0.1, 电量充满放一晚上早上基本上是 98%, 99% 的样子, 但是更新了 iOS 13 之后, 待机时候基本半小时就要掉个 1%, 这个差距确实蛮大的.在网上查了一下, 各大论坛, 贴吧的确有很多有这种帖子. 大家都说 iOS 13 正式版比以前耗电.网上的解决办法基本都是:  关闭蓝牙.  关闭后台刷新.  …都是 N 久以前就有的所谓 延长续航 的办法. 这些或许真的有用.关闭蓝牙, 就影响其他外设的正常使用习惯, 比如: Watch 等一些蓝牙外设.查看一下 后台刷新, 确实, 以前大部分都是关闭的, 但是现在都是打开的, 难道是 iOS 13 更新之后重置了我的设置?? 不知道其他人什么情况. 然后统统关闭, 反正影响不大. 但是没啥效果.依然已经更新了系统了, 先用着. 本来打算看看后续苹果怎么优化吧.问题可能是 iCloud直到昨晚收到了苹果的一封邮件:  尊敬的xxx，您好：感谢您使用 iCloud 来安全地储存 iOS 设备中的重要信息。您的 5 GB 免费 iCloud 储存空间剩余容量已不足 25%。若每个月支付 ¥6.00，您便可获得 50 GB 储存空间。获取更多储存空间。您正在使用 iCloud 照片和 iCloud 云盘，将照片、视频和文稿安全地储存在 iCloud 中。iCloud 云备份还会在每天夜间自动备份您的设备上的所有 App。如果 iCloud 储存空间不足，您的新照片、视频和文稿将不会再上传至 iCloud，您的设备也会停止备份。此致iCloud 团队之前我的 iCloud 的设置连照片都不让同步的, 只有部分 App 才允许同步, 这才感觉奇怪.打开 iCloud 一看, 空间已经使用了 4G 多, 什么时候 iOS 把我所有 App 的数据全部备份到了云端…寻思着一整天这么耗电, 估计是因为一直在后台同步 iCloud???  选择一一手动关闭.关闭 iCloud 同步:并不是说要彻底关闭 iCloud, 而是关闭 iOS 对部分不需要进行备份的 App 的数据进行同步.关闭 iCloud 的授权, 一般来说会一定程度上影响到 App 的使用:  比如我有一个记账的 App, 他是通过 iCloud 来在我的 iPad, iPhone, Mac 之间进行数据同步, 如果我关闭了授权, 多个终端的数据就变成单机了.  因此此处的开关酌情进行关闭, 比如: 除了一台 iPhone 没有其他设备, 并且我也不需要进行数据备份, 就可以选择关闭.关闭方法: 设置 -&amp;gt; 账号 -&amp;gt; iCloud, 关掉对应 App 的开关即可.关闭其他 App 的数据备份  这部分 App 一般来说根本就不需要进行备份, 比如: 游戏, 这些数据都有游戏运营商给我们存着, 本地的东西都无需备份, 甚至有一些是无用, 但应用又未进行清理的垃圾数据. 不仅无用还占空间.  但是这部分数据 iCloud 默认也是会进行备份的. 除非你告诉他这些不用备份.关闭方法: 管理存储空间 -&amp;gt; 备份 -&amp;gt; 当前设备(一般是本机的名称) -&amp;gt; 显示所有AppiCloud 数据同步也会增加耗电量. 因此绝大部分 App 一般来说都没有数据同步的必要, 直接关闭即可. 部分需要 多设备数据同步 或者需要 数据备份 的的可以打开.结果然后昨天晚上 12 点左右睡觉时候手机从充电座拔下, 电量是 100%.今天早上起床时候电量如下图: (截图了部分)还是 99%. 所以可以确定, 昨天耗电飙升的锅基本出在 iCloud 数据同步了.这个办法未必能解决你情况, 但是你可以尝试一下."
+  },
+  
+  {
+    "title": "iOS 中时区的坑",
+    "url": "/posts/iOS-%E4%B8%AD%E6%97%B6%E5%8C%BA%E7%9A%84%E5%9D%91/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2019-09-11 22:41:29 +0800",
+    
+
+
+
+
+
+    "snippet": "iOS 开发中以前用开发一直使用 DateFormatter / NSDateFormatter 来格式化时间, 获取时间字符串, 因此倒也没有遇到过时区的问题.最近需要做一个类似于社区应用动态发布时间类似于:  发布于: 10 秒前发布于: 1 小时前…这样的时间展示方式就需要来计算从发布到当前时间间隔来进行判断如何展示给用户.因此使用如下代码来计算发布到当前时间过去了多少秒:public func timeText(_ created: Date) -&amp;gt; String {    // created 为动态创建的时间的 Date 对象    let sec = Date().timeIntervalSince1970 - created.timeIntervalSince1970    if sec &amp;lt; 60 {        return String(Int(sec)) + &quot;秒前&quot;    }    // 省略其他判断分支}但是这样的写法可能会出现:  发布于: -275099 秒前…出现这样的结果的问题就出现在 Date() 这个初始上面. Date() 初始化的时间为 GTM +0000 时区的时间.  纠正:原本以为 Date() 会根据当前系统设置的时区来初始化. 结果使用真机测试之后发现总是会以 GTM +0000 时区来初始化. 因此 使用 Date().timeIntervalSince1970 来获取当前的时间就会出现 8 小时 / 28800 秒 的时间差.一般开发时候, 我们会使用 DateFormatter / NSDateFormatter 来对 NSDate / Date 对象进行时间字符串的格式化, 如果没有特殊需求的时候, 都会按照当前时区来进行处理, 倒也不会出现什么问题.但是如果需要获取当前时区准确的 时间戳 来进行计算的时候, 就需要把 时区 考虑进去:public func timeText(_ created: Date) -&amp;gt; String {    // 获取当前时区    let timeZone = TimeZone.current    // 获取当前时区与 0 时区的时间差    let offset = timeZone.secondsFromGMT()    // 计算当前时区的时间戳    let timestamp = Date().timeIntervalSince1970 + TimeInterval(offset)    // 发布时间到当前时间间隔    let sec = timestamp - created.timeIntervalSince1970    if sec &amp;lt; 60 {        return String(Int(sec)) + &quot;秒前&quot;    }    // 省略其他判断分支       }至此问题就解决了."
+  },
+  
+  {
+    "title": "Xcode 编译失败但不显示报错信息的解决办法",
+    "url": "/posts/Xcode-%E7%BC%96%E8%AF%91%E5%A4%B1%E8%B4%A5%E4%BD%86%E4%B8%8D%E6%98%BE%E7%A4%BA%E6%8A%A5%E9%94%99%E4%BF%A1%E6%81%AF%E7%9A%84%E8%A7%A3%E5%86%B3%E5%8A%9E%E6%B3%95/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2019-08-31 15:50:56 +0800",
+    
+
+
+
+
+
+    "snippet": "开发过程中, 如果代码有误, Xcode 或像下图一样提示我们相关的错误:此时我们根据报错信息修改即可. 但是我们偶尔会遇到编译不通过, 但是任何提示信息都没有.方法一: 修改配置信息网上大部分解决办法都是修改 Build Settings:  Build Settings-&amp;gt;Architectures-&amp;gt;Build Active Architecture Only 修改为 YES这个办法确实大多数情况下都能解决问题.方法二: 不修改配置如何找到报错信息其实我们的目的是找到报错信息并解决问题, 修改配置只是解决问题的一种办法.其实错误信息是存在的, 只是 Xcode 没有在显眼的地方提示我们.步骤:  选择 Xcode 导航栏的最后一项.  选择编译出错的记录.  找到编译错误.这个是不是 Xcode 的 bug 目前还不确定, 因为官方一直未修复.但是问题解决了就好."
+  },
+  
+  {
+    "title": "Swift 5.1 学习: (7) 字符串和字符",
+    "url": "/posts/Swift-5.1-%E5%AD%A6%E4%B9%A0-(7)-%E5%AD%97%E7%AC%A6%E4%B8%B2%E5%92%8C%E5%AD%97%E7%AC%A6/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2019-08-30 14:32:46 +0800",
+    
+
+
+
+
+
+    "snippet": "Swift 中的 String 类型是由 Foundation 框架中的 NSString 类桥接而来. Foundation 框架还对 String 扩展了 NSString 定义的方法. 因此如果你导入了 Foundation 框架, 就可以直接对 String 调用 NSString 的方法.字符串字面值字符串的定义和 C语言 中的比较像:let someString = &quot;Some string literal value&quot;多行字符串Swift 中可以使用 3 个双引号定义多行字符串:let quotation = &quot;&quot;&quot;The White Rabbit put on his spectacles.  &quot;Where shall I begin,please your Majesty?&quot; he asked.&quot;Begin at the beginning,&quot; the King said gravely, &quot;and go ontill you come to the end; then stop.&quot;&quot;&quot;&quot;以上多行字符串包含了引号内的所有内容: 字符串, 换行符 等.如果你不想让字符串内包含换行符, 可以在每行的结尾使用 &quot;\\&quot; 来进行处理:let softWrappedQuotation = &quot;&quot;&quot;The White Rabbit put on his spectacles.  &quot;Where shall I begin, \\please your Majesty?&quot; he asked.&quot;Begin at the beginning,&quot; the King said gravely, &quot;and go on \\till you come to the end; then stop.&quot;&quot;&quot;&quot;有时候我们可能会需要利用 缩进 来使我们的代码更加方便阅读. 这时候我们可以我们需要指明哪些空格是需要忽略的, 不计入字符串内容:做法如下图:此处, 在我们的字符串结束部分的 &quot;&quot;&quot; 前面有 4 个 空格, 就意味着忽略每行的前 4 个空格.特殊字符字符串中也可以包含一些特殊字符:            字符      含义                  \\0      空字符              \\n      换行符              \\r      回车              \\t      制表符              \\\\      斜杠              \\&quot;      双引号              \\&#39;      单引号              Unicode 值      \\u{n}, 其中 n 是 1-8 位的十六进制数字      如下事例, wiseWords 因为其中包含了 &quot;, 因此使用 \\ 来进行转义 :let wiseWords = &quot;\\&quot;Imagination is more important than knowledge\\&quot; - Einstein&quot;// &quot;Imagination is more important than knowledge&quot; - Einsteinlet dollarSign = &quot;\\u{24}&quot;        // $,  Unicode 值 U+0024let blackHeart = &quot;\\u{2665}&quot;      // ,  Unicode 值 U+2665let sparklingHeart = &quot;\\u{1F496}&quot; // , Unicode 值 U+1F496而在 多行字符串 中, 由于使用 3 个 &quot; 来进行定义, 因此可以在内部包含 &#39; (单引号)或者 &quot; (双引号), 而无需使用 \\ 进行转义.let threeDoubleQuotationMarks = &quot;&quot;&quot;Escaping the first quotation mark \\&quot;&quot;&quot;Escaping all three quotation marks \\&quot;\\&quot;\\&quot;&quot;&quot;&quot;字符串分隔符有时候我们的字符串中包含有特殊字符, 比如 \\n, 但是我们不想出发他的 换行 效果.此时可以将字符串放在 分隔符 中, 比如: #&quot;Line 1\\nLine 2&quot;#, 此时如果我们打印字符串, 就不会触发 \\n 的换行效果了.如果你需要换行效果, 以上面的字符串为例可以用 #&quot;Line 1\\#nLine 2&quot;# 来代替. 类似的 ###&quot;Line1\\###nLine2&quot;### 也会进行换行.分隔符还可以与多行字符串一起使用:let threeMoreDoubleQuotationMarks = #&quot;&quot;&quot;Here are three more double quotes: &quot;&quot;&quot;&quot;&quot;&quot;#此处就屏蔽了中间的 &quot;&quot;&quot;, 使字符串中包含了 &quot;&quot;&quot;.初始化空字符串初始化方法有 2 种:var emptyString = &quot;&quot;               // 空字符串var anotherEmptyString = String()  // 初始化方法检测一个字符串是否为空字符串, 可以使用 isEmpty:if emptyString.isEmpty {    print(&quot;是空字符串&quot;)}// 打印结果: 是空字符串字符串的可变性当我们把一个字符串赋值给 变量 的时候, 就可以对 变量 和 字符串 进行操作 (可变字符串), 如果是 常量, 则无法进行操作 (不可变字符串):var variableString = &quot;Horse&quot;variableString += &quot; and carriage&quot;// variableString = &quot;Horse and carriage&quot;let constantString = &quot;Highlander&quot;constantString += &quot; and another Highlander&quot;// 报错: - a constant string cannot be modified  提示此处与 OC 和 Cocoa 中的 NSString 和 NSMutableString 不同, 在 OC 中是用过使用不同的类使其成为 可变字符串 或 不可变字符串.String 是 值类型Swift 中 String 是一个 值类型. 如果你把一个 String 对象传递给 函数 或者 方法, 或者赋值给别的 常量 或者 变量 时, String 对象将会创建一个新的字符串来进行传递, 而不是原始的 String 对象.Swift 的 copy-by-default 的特性确保了 String 对象在传递过程中,  确保 方法 或者 函数 接收到的字符串不会被修改.Swift 编译器也对字符串进行了优化, 只有在必要的时候才会对字符串进行复制. 因此字符串在作为值类型的同时, 也保持着较好的性能.字符我们可以用过 for-in 循环来遍历获得字符串中的每一个字符:for character in &quot;Dog!&quot; {    print(character)}// D// o// g// !你也可以通过 单字符字符串 创建 Character 类型的 变量 或者 常量:let exclamationMark: Character = &quot;!&quot;"
+  },
+  
+  {
+    "title": "Swift 5.1 学习 (6) : 基本运算符",
+    "url": "/posts/Swift-5.1-%E5%AD%A6%E4%B9%A0-(6)-%E5%9F%BA%E6%9C%AC%E8%BF%90%E7%AE%97%E7%AC%A6/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2019-08-21 13:06:36 +0800",
+    
+
+
+
+
+
+    "snippet": "运算符 是用于 检查 , 更改 或者 组合 值的 特殊符号 或 短语.Swift 支持大多数 C语言 的运算符, 并改进了一些功能来消除常见的编码错误. 比如: 赋值运算符 (=) 不返回值, 避免使用 == 时错误的使用它. 算术运算符 +, -, *, /, % 等 检测禁止值的溢出.Swift 还提供了 C语言 中没有的 范围运算符, 比如 a..&amp;lt; b 和 a... 表示值的范围.本章主要描述 Swift 中 常用运算符, 高级运算符, 并描述如何定义您自己的 自定义运算符.术语运算符有 一元运算符, 二元运算符, 三元运算符.            名称      操作目标数      示例      说明                  一元运算符      1      -a, !a      出现在目标的前面或者后面              二元运算符      2      a + b      出现在两个操作目标之间              三元运算符      3      a ? b ; c      也叫三目运算符      赋值运算符赋值运算符 用于 初始化 或者 更新 目标的值:let b = 10var a = 5a = b// a 的值为 10如果 赋值运算符 的右侧是一个包含多个值的 元组, 那个他的元素可以分解为多个 常量 或者 变量.let (x, y) = (1, 2)// x = 1,  y = 2与 C语言 和 OC 中的 赋值运算符 不同的是, 在 Swift 中 赋值运算符 本身并不返回值.以下代码是会报错的:if x = y {    // 此段代码是会报错的, 因为 x = y 不会返回任何的值.}算数运算符Swift 为所有 数字类型 提供了四种标准 算术运算符.            名称      符号                  加法运算符      +              减法运算符      -              乘法运算符      *              除法运算符      /      与 C语言 和 OC 中的 算术运算符 不同的是, Swift 中 算术运算符 默认情况下不允许 值溢出.你可以通过 溢出运算符 来评估是否发生溢出.加法运算符 也支持 String 类型, 对其进行连接:let string = &quot;hello, &quot; + &quot;world&quot;  // string = &quot;hello, world&quot;求余运算符求余运算符 简单来说就是计算 a 除以 b 剩余的 余数, 这样一个运算符.  提示求余运算符 在其他语言中也叫做 模运算符. 但是在 Swift 中对 负数 的运算严格来说是 求余 而不是 求模.求余运算符 用法为:9 % 4// 结果为 1-9 % 4// 结果为 -1复合赋值运算符像 C语言 中一样, Swift 中也提供了多个操作符组合在一起的 复合赋值运算符. 比如: +=, -= 等等.var a = 1a += 2// a 的值为 3案例中, a += 2 是 a = a + 2 的简写.  注意复合赋值运算符 不返回值, 因此 let b = a += 2 的写法是错误的.关于 Swift 提供的标准运算法, 可以参考 Operator Declarations比较运算符Swift 支持所有标准 C语言 比较运算符:  等于: ==.  不等于: !=.  大于: &amp;gt;.  小于: &amp;lt;.  大于等于: &amp;gt;=.  小于等于: &amp;lt;=.  提示Swift 中还提供了 === 和 !== 两种运算符, 用于测试两个对象引用是否都引用自同一个对象实例.比较运算符 返回一个 Bool 类型的值表示表达式结果是否为 true:1 == 1   // true2 != 1   // true2 &amp;gt; 1    // true1 &amp;lt; 2    // true1 &amp;gt;= 1   // true2 &amp;lt;= 1   // falseif 语句中的使用比较运算符 也经常用于条件语句, 比如 if 语句:let name = &quot;world&quot;if name == &quot;world&quot; {    print(&quot;hello, world&quot;)} else {    print(&quot;I&#39;m sorry \\(name), but I don&#39;t recognize you&quot;)}// 打印结果: &quot;hello, world&quot;元组 的比较如果两个 元组 有 相同的类型 和 相同数量的值, 则可以对其进行比较.比较过程从左到右, 对每个元素进行比较, 直到发现两个不相等的值. 只要有一个元素值不相等, 元组 就不相等. 相反的, 只有所有的值都相等, 元组 才是相等的.(1, &quot;zebra&quot;) &amp;lt; (2, &quot;apple&quot;)   // true 因为 1 &amp;lt; 2(3, &quot;apple&quot;) &amp;lt; (3, &quot;bird&quot;)    // true 因为 3 == 3, &quot;apple&quot; &amp;lt; &quot;bird&quot;(4, &quot;dog&quot;) == (4, &quot;dog&quot;)      // true 因为 4 == 4, and &quot;dog&quot; == &quot;dog&quot;只有 运算符 可以作用于 元组 中所有的元素时候, 才可以用 运算符 进行比较. 比如:(&quot;blue&quot;, -1) &amp;lt; (&quot;purple&quot;, 1)        // OK(&quot;blue&quot;, false) &amp;lt; (&quot;purple&quot;, true)  // Error 因为 &amp;lt; 不能用于 Bool 类型的比较  注意Swift 标准库中包含了少于 7 个元素的 元组 的比较操作符. 如果你要对 &amp;gt;= 7 个元素的 元组 进行比较的时候, 就必须自己实现 比较操作符 了.三目条件运算符三目条件运算符 是由三部分组成的特殊运算符. 其结构为: question ? answer1 : answer2.当表达式 question 的结果为 true 时, 运算表达式 answer1 并返回其运算结果. 当表达式 question 的结果为 false 时, 运算表达式 answer2 并返回其运算结果.三目条件运算符 也可以看错是以下事例代码的简写:if question {    answer1} else {    answer2}以下是个计算 UITableView 的 rowHeight 的案例. 当有 header 时候 rowHeight 比 contentHeight 大 50. 没有 header 时候 rowHeight 比 contentHeight 大 20.let contentHeight = 40let hasHeader = truelet rowHeight = contentHeight + (hasHeader ? 50 : 20)// rowHeight == 90以上案例也可以用以下的写法:let contentHeight = 40let hasHeader = truelet rowHeight: Intif hasHeader {    rowHeight = contentHeight + 50} else {    rowHeight = contentHeight + 20}// rowHeight == 90三元条件运算符 可以使代码更加简洁. 但是过度使用, 也可能使代码难以阅读.空合运算符空合运算符 (a ?? b) 的用途为 解包 一个 **Optional ** 的 a, 如果 a != nil, 则返回 a 中存储的值, 如果 a == nil, 则返回 b. 其中 a 必须为一个 **Optional ** 类型, 并且 b 的类型必须与 a 中存储的值的类型保持一致.空合运算符 也可以看做是以下事例的简写:a != nil ? a! : b  提示如果 a != nil, 则 b 就不会被计算 (b 可能是一个值, 也可能是一个表达式). 这就是所谓的 短路评估.以下案例使用 空合运算符 对用户自定义颜色和默认颜色之间进行选择:let defaultColorName = &quot;red&quot;var userDefinedColorName: String?   // 默认为 nilvar colorNameToUse = userDefinedColorName ?? defaultColorName// userDefinedColorName == nil, 所以 colorNameToUse 取 defaultColorName 的值 &quot;red&quot;如果案例中 userDefinedColorName = &quot;yellow&quot;, 则此处  colorNameToUse = &quot;yellow&quot;.区间运算符区间运算符(Range Operators) 也有的地方翻译为 范围运算符.区间运算符 是一种表达值的范围的一种快捷方式, 共有三种.            分类      写法      意义      示例                  封闭区间      a...b      &amp;gt;= a &amp;amp;&amp;amp; &amp;lt;= b      1...4 包括 1, 2, 3, 4              半开区间      a..&amp;lt;b      &amp;gt;= a &amp;amp;&amp;amp; &amp;lt; b      1..&amp;lt; 4 包括 1, 2, 3              单侧区间      a...      &amp;gt;= a      1... 包括 1, 2, 3, 4 … 并非上限无穷, 要视场景而定      封闭区间运算符封闭区间运算符 a...b 表示一个 a 到 b 的范围, 且包含 a 和 b. 其中 a &amp;lt;= b 是必要条件.闭合区间运算符 在遍历所有值的范围时非常有用，例如for-in循环:for index in 1...5 {    print(&quot;\\(index) times 5 is \\(index * 5)&quot;)}// 1 times 5 is 5// 2 times 5 is 10// 3 times 5 is 15// 4 times 5 is 20// 5 times 5 is 25半开区间运算符半开区间运算符 a..&amp;lt; b 同样表示 a 到 b 的范围, 但是其包含 a 但不包含 b. a &amp;lt;= b 依旧是必要条件. r如果 a == b 则范围为 空区间.半开区间运算符 在遍历数组时候非常有用但不限于数组:let names = [&quot;Anna&quot;, &quot;Alex&quot;, &quot;Brian&quot;, &quot;Jack&quot;]let count = names.countfor i in 0..&amp;lt;count {    print(&quot;Person \\(i + 1) is called \\(names[i])&quot;)}// Person 1 is called Anna// Person 2 is called Alex// Person 3 is called Brian// Person 4 is called Jack单侧区间运算符单侧区间运算符 a... 表示从 a 开始在一个方向上尽可能继续的范围. 比如: 一个范围包含从索引 a 到数组末尾的所有元素. 在这种情况下可以忽略操作符一侧的值.for name in names[2...] {    print(name)}// Brian// Jackfor name in names[...2] {    print(name)}// Anna// Alex// Brian单侧区间运算符 还有另一种写法: ..&amp;lt;a. 如下事例:for name in names[..&amp;lt;2] {    print(name)}// Anna// Alex单侧区间运算符 可以用于其他上下文中, 而不仅仅是下标. 要根据上下文才能理解其具有的具体意义. 由于其范围是无限的, 因此在循环过程中需要显式的为其提供停止循环的条件.单侧区间运算符 还可以检查范围内是否包含了特定的值.let range = ...5range.contains(7)   // falserange.contains(4)   // truerange.contains(-1)  // true逻辑运算符逻辑运算符 用于 修改 或者 组合 布尔逻辑值 true / false.Swift 支持基于 C语言 的三种逻辑运算符.            名称      符号      使用方法                  与      &amp;amp;&amp;amp;      a &amp;amp;&amp;amp; b              或      &amp;#124;&amp;#124;      a &amp;#124;&amp;#124; b              非      !             | !a             “非” 运算符非 运算符 !a 对一个布尔值进行反转. 比如: true 变为 false, false 变为 true.非 运算符是一个 前缀运算符. 它出现在操作值的前面. 用法如下:let allowedEntry = falseif !allowedEntry {    print(&quot;拒绝访问&quot;)}// 打印结果: &quot;拒绝访问&quot;  提示在本例中，仔细选择布尔常量和变量名有助于保持代码的可读性和简洁性, 同时避免双重否定或混淆逻辑语句.“与” 运算符在 a &amp;amp;&amp;amp; b 表达式中只有 a 和 b 两个表达式的结果同时为 true 时, 整个表达式的结果才为 true. 在 a 和 b 中任意一个表达式的结果为 false, 整个表达式的结果就为 false.如下示例中, 任意一个 Bool 值为 false 都不允许访问:let enteredDoorCode = truelet passedRetinaScan = falseif enteredDoorCode &amp;amp;&amp;amp; passedRetinaScan {    print(&quot;Welcome!&quot;)} else {    print(&quot;禁止访问&quot;)}// 打印结果: &quot;禁止访问&quot;“或” 运算符或 运算符 为中缀运算符. 可以用于创建逻辑表达式 a || b, 其中只要 a 或者 b 任意一个表达式的结果为 true 整个逻辑表达式的结果就为 true. 只有 a 和 b 同时为 fase 时, 整个逻辑表达式的结果才为 false.或 运算符 与 与 运算符相同, 都使用 短路评估 来求值.与 运算符表达式中, 如果 a == false 则 a &amp;amp;&amp;amp; b == false, b 的结果已经无法影响表达式的结果.或 运算符表达式中, 如果 a == true 则 a || b == true, b 的结果也已经无法影响表达式的结果.如下示例中, hasDoorKey 为 false, knowsOverridePassword 为 true, 因此整个表达式的结果为 true:let hasDoorKey = falselet knowsOverridePassword = trueif hasDoorKey || knowsOverridePassword {    print(&quot;Welcome!&quot;)} else {    print(&quot;禁止访问&quot;)}// 打印结果: &quot;Welcome!&quot;逻辑运算符混用你可以用多个逻辑运算符来创建更长的复合表达式:if enteredDoorCode &amp;amp;&amp;amp; passedRetinaScan || hasDoorKey || knowsOverridePassword {    print(&quot;Welcome!&quot;)} else {    print(&quot;禁止访问&quot;)}// 打印结果: &quot;Welcome!&quot;根据 enteredDoorCode、passedRetinaScan和 hasDoorKey 的值，前两个子表达式为 false. 但是, knowsOverridePassword 是 true，所以整个复合表达式的值仍然为 true.  提示Swift 逻辑运算符 &amp;amp;&amp;amp; 和 || 是左关联的，这意味着具有多个逻辑运算符的复合表达式首先计算最左边的子表达式.括号的使用在符合逻辑表达式中, 使用括号可以使复杂的逻辑表达式的意图变得易于理解. 比如在上面的符合逻辑表达式中加入括号:if (enteredDoorCode &amp;amp;&amp;amp; passedRetinaScan) || hasDoorKey || knowsOverridePassword {    print(&quot;Welcome!&quot;)} else {    print(&quot;禁止访问&quot;)}// 打印结果: &quot;Welcome!&quot;在括号中的 enteredDoorCode &amp;amp;&amp;amp; passedRetinaScan 被认为是整个表达式中逻辑独立的. 复合表达式的整体结果未发生变化, 但是其总体意图却更加清晰了."
+  },
+  
+  {
+    "title": "Swift 5.1 学习 (5) : 可选类型",
+    "url": "/posts/Swift-5.1-%E5%AD%A6%E4%B9%A0-(5)-%E5%8F%AF%E9%80%89%E7%B1%BB%E5%9E%8B/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2019-08-18 20:20:08 +0800",
+    
+
+
+
+
+
+    "snippet": "可选类型Optional 我们翻译做 可选类型, 在一个 常量 或者 变量 的值可能等于 nil 的情况下使用. 一个 Optional 的的变量, 他可能有一个 真实存在的值 , 也可能为 nil.  提示Optional 的概念在 C语言 和 OC 中是不存在的. OC 中最接近的是能够从一个方法返回 nil 或者 一个对象. nil 所表达的意思就是 缺少一个有效的对象. 然而, 这仅仅适用于对象, 对于 结构体 和 枚举类型 并不适用. 对于这些类型, OC 方法通常返回一个特殊的值 (比如: NSNotFound) 来表示 无值. 这种方式通常是建立在方法的调用者已经知道要测试一个特殊值的条件之下. Swift 的 Optional 允许任何类型都没有值, 而不需要特殊的常量.那么如何使用 Optional 来处理空值的情况呢?举个例子: 比如我们需要把 String 类型转换为 Int 类型. 但是并不是所有的 String 类型的对象都可以转换为 Int 类型. 比如 &quot;123&quot; 可以转换成 123, 但是 &quot;Hello World&quot; 就不能转换为 Int 类型.下面的事例就是使用 Int 的初始化方法尝试把 String 转换为 Int 类型:let possibleNumber = &quot;123&quot;let convertedNumber = Int(possibleNumber)// convertedNumber 的推断类型就是 &quot;Int?&quot;, 或者 &quot;optional Int&quot;因为 Int 的初始化方法可能执行失败, 因此他返回的是 Optional 类型的 Int? 而不是 Int 类型. 这个事例中 convertedNumber 的值可能是一个 Int 类型的值, 也可能初始化失败而 无值.nil你可以通过给一个 Optional 的变量赋值为 nil 来表示其 没有值.var serverResponseCode: Int? = 404// serverResponseCode 有一个实际存在的 Int 类型的值 404serverResponseCode = nil// serverResponseCode 当前没有值  提示你不能把 nil 赋值给一个 非 Optional 的 常量/变量. 在开发中, 如果一个值在某些情况需要处理 无值 的情况, 你就需要声明其为适当的 Optional 类型.如果你声明了一个 Optional 的 变量 而未设置其 初始值, 这个 变量 的值就会被默认的设置为 nil.var surveyAnswer: String?// surveyAnswer 被默认设置为 nil  注意在 Swift 和 OC 中, nil 意义是不同的. 在 OC 中, nil 表示指向不存在的对象. 在 Swift 中, nil 并不是一个 指针, 他表示的是某个类型值的缺失. 所有 Optional 都可以被设置为 nil, 不仅仅是 对象类型.if 语句 和 强制解包你可以使用 if 语句对 Optional 与 nil 进行对比来判断其是否 有值. 你可以使用 == 或者 != 来对其进行比较:if convertedNumber != nil {    print(&quot;convertedNumber 有值.&quot;)}// 打印结果: &quot;cconvertedNumber 有值.&quot;如果你能够肯定一个 Optional 有值, 你可以通过在 变量名 的尾部加上 ! 来访问其存储的值. 这被称为 强制解包.if convertedNumber != nil {    print(&quot;convertedNumber 的值为 \\(convertedNumber!).&quot;)}// 打印结果: &quot;convertedNumber 的值为 123.&quot;  注意如果尝试使用 ! 去访问一个 无值 的 Optional 的 变量 的值时将会触发运行时错误. 在使用 ! 进行 强制解包 之前, 必须确保其存在一个 非 nil 的值.可选绑定你可以使用 可选绑定 来确定一个 Optional 是有 有值. 如果有值, 则把值作为一个临时 常量/变量 来使用. 可选绑定 可以与 if 和 while 一起使用, 来检查 Optional 中的值.使用 if 来写一个 可选绑定 的事例:if let actualNumber = Int(possibleNumber) {    print(&quot;\\&quot;\\(possibleNumber)\\&quot; 可以转换为 \\(actualNumber)&quot;)} else {    print(&quot;字符串 \\&quot;\\(possibleNumber)\\&quot; 不能转换为 Int 类型&quot;)}// 打印结果: &quot;123&quot; 可以转换为 123这段代码可以理解为:如果 possibleNumber 可以通过 Int(possibleNumber) 返回一个 Int 类型的值(非 nil 的值). 就把这个值复制给一个新的常量 actualNumber (此处的 actualNumber 为 Int 类型, 而非 Int?).如果转换成功, actualNumber 就可以在 if 语句的第一个分之内直接使用. actualNumber 初始化的时候已经被赋予了 possibleNumber 的值, 因此无需使用 ! 来强制解包获取他的值.你可以使用 常量 或者 变量 来进行 可选绑定. 如果你需要在 if 语句的第一个分支中操作 actualNumber, 则可以使用 if var actualNumber 来代替事例代码中的相应部分.你可以在一个 if 判断语句中包含多个 可选绑定 和 布尔条件, 但是你需要使用 &quot;,&quot; 来对其进行分隔. 如果 if 的判断语句中有任意一个 Optional 的值为 nil 或者任意一个 布尔条件 的结果为 false, 则整个 if 判断条件的结果都将为 false.if let firstNumber = Int(&quot;4&quot;), let secondNumber = Int(&quot;42&quot;), firstNumber &amp;lt; secondNumber &amp;amp;&amp;amp; secondNumber &amp;lt; 100 {    print(&quot;\\(firstNumber) &amp;lt; \\(secondNumber) &amp;lt; 100&quot;)}// 打印结果 &quot;4 &amp;lt; 42 &amp;lt; 100&quot;if let firstNumber = Int(&quot;4&quot;) {    if let secondNumber = Int(&quot;42&quot;) {        if firstNumber &amp;lt; secondNumber &amp;amp;&amp;amp; secondNumber &amp;lt; 100 {            print(&quot;\\(firstNumber) &amp;lt; \\(secondNumber) &amp;lt; 100&quot;)        }    }}// 打印结果: &quot;4 &amp;lt; 42 &amp;lt; 100&quot;  提示在 if 语句中使用 可选绑定 创建的 常量 和 变量 只能在 if 语句的主体中使用. 使用 guard 语句创建的 常量 和 变量 可以在 guard 后面的代码中使用.隐式解包在上文的描述中, 我们知道了 Optional 的 常量 或者 变量 允许 无值 的状态. 可以通过 if 语句来检查 Optional 是否 有值. 并且可以通过 可选绑定 来获取内部的值.在有些时候，从程序的结构可以清楚地看出 Optional 一定有值, 比如在第一次赋值之后. 在这种情况下, 我们可以安全的假设 Optional 是一定有值的, 所以在存取值的时候就可以省略掉 检查 和 解包 的操作.这种 Optional 被定义为 implicitly unwrapped optionals (隐式解包的可选类型). 其定义方法为在类型的尾部使用 ! (String!) 而非 ? (String?).隐式解包的 Optional 类型其背后是一个普通的 Optional, 但也可以像 非Optional 类型一样使用, 而不需要每次访问的时候都进行解包.以下案例对 String? 和 String! 进行了对比:let possibleString: String? = &quot;An optional string.&quot;let forcedString: String = possibleString! // 需要 !let assumedString: String! = &quot;An implicitly unwrapped optional string.&quot;let implicitString: String = assumedString // 无需 !你可以理解为可隐式展开的 Optional 在使用的时候可以自动解包. 每次在使用 Optional 的时候不是在 变量名 后面添加 !, 而是声明的时候在 类型 的后面添加 !.  注意如果一个可隐式解包的 Optional 的值为 nil, 当你尝试读取其值的时候, 就会触发运行时错误. 这和你在一个 无值 的普通 Optional 变量名结尾添加 ! 是一样的.你也可以像普通 Optional 一样来检查一个可隐式解包的 Optional 是否有值:if assumedString != nil {    print(assumedString!)}// 打印结果: &quot;An implicitly unwrapped optional string.&quot;你也可以使用 可选绑定 来检查和获取 Optional 的值:if let definiteString = assumedString {    print(definiteString)}// 打印结果: &quot;An implicitly unwrapped optional string.&quot;  提示当变量的值可能在稍后变为 nil 的情况下, 不要使用隐式解包的 Optional 类型. 在变量的生命周期内如果需要检查其值是否为 `nil’, 建议使用普通的 Optional 类型."
+  },
+  
+  {
+    "title": "iOS 因控制字符导致解析 XML 失败",
+    "url": "/posts/iOS-%E5%9B%A0%E6%8E%A7%E5%88%B6%E5%AD%97%E7%AC%A6%E5%AF%BC%E8%87%B4%E8%A7%A3%E6%9E%90-XML-%E5%A4%B1%E8%B4%A5/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2019-08-15 17:57:00 +0800",
+    
+
+
+
+
+
+    "snippet": "描述最近在写一个个人项目的时候遇到解析 XML 失败的问题.但是在 Adroid 上可以解析成功, 那么只能是我们自己的问题了. 慢慢找问题解决吧.分析使用 Safari 打开 xml 文件报错信息如下:  This page contains the following errors:  error on line 2722 at column 343: PCDATA invalid Char value 28Below is a rendering of the page up to the first error.整个报错信息最核心的就是: PCDATA invalid Char value 28.报错信息中可以看出是因为 无效字符 的原因.查一下 ASCII, 28 对应的是 控制字符 中的 文件分隔符. 所有的控制字符都是 不可见字符.XML 标准中是不允许出现 控制字符 的.既然找到了原因, 就过滤掉 控制字符 吧.解决方法iOS 的 API 中有为我们提供 控制字符集合:// OC[NSCharacterSet controlCharacterSet];// SwiftNSCharacterSet.controlCharacters过滤控制字符:// validData 为请求到的 XML 二进制数据if var text = String(data: validData, encoding: .utf8) {    // 此处未找到直接 remove 字符的 API    // 因此选择了根据 控制字符 来分割字符串, 然后拼接的方法来处理    text = text.components(separatedBy: NSCharacterSet.controlCharacters).joined()    // 解析操作}在过滤之后, XML 终于解析成功.补充过滤掉 控制字符 的思路是对的, 但是不要忘记了 \\n, \\t 都是 控制字符.如果连这 2 个也过滤掉的话, 我们的 文本 等内容可能格式会乱掉, 因此需要忽略这些常用的控制字符:// 控制字符中忽略掉 \\n \\t \\rlet sets = CharacterSet.controlCharacters.subtracting(CharacterSet(charactersIn: &quot;\\n\\t\\r&quot;))"
+  },
+  
+  {
+    "title": "Swift 5.1 学习 (4) : 元组",
+    "url": "/posts/Swift-5.1-%E5%AD%A6%E4%B9%A0-(4)-%E5%85%83%E7%BB%84/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2019-08-13 23:57:00 +0800",
+    
+
+
+
+
+
+    "snippet": "元组元组 可以把多个值组合成一个 复合值. 元组 中的值可以是任何类型的, 而且不必是彼茨想同的类型.比如:let http404Error = (404, &quot;Not Found&quot;)案例中的 元组 描述的是 HTTP 的状态码.在 (404, &quot;Not Found&quot;) 元组 中包含 Int 和 String 类型的变量. Int 为 HTTP 状态码, String 为 HTTP 状态的描述. 其类型为 (Int, String).你可以创建 任意类型 和 不同排列 的 元组, 他可以包含任何数量不同的类型. 比如: (Int, Int, Int) 或者 (String, Bool).当然, 你也可以把 元组 拆分成 变量 或者 常量:let (statusCode, statusMessage) = http404Errorprint(&quot;statusCode = \\(statusCode)&quot;)// 打印结果 &quot;statusCode = 404&quot;print(&quot;statusMessage = \\(statusMessage)&quot;)// 打印结果 &quot;statusMessage = Not Found&quot;如果你仅需要 元组 内部分值的时候, 可以利用 _ 来忽略其他的值:let (justTheStatusCode, _) = http404Errorprint(&quot;statusCode = \\(justTheStatusCode)&quot;)// 打印结果 &quot;statusCode = 404&quot;也可以使用 索引 来访问 元组 内的值:print(&quot;statusCode = \\(http404Error.0)&quot;)// 打印结果: &quot;statusCode = 404&quot;print(&quot;statusMessage = \\(http404Error.1)&quot;)// 打印结果: &quot;statusMessage = Not Found&quot;在定义元组的时候, 可以定义每个值的名称:let http200Status = (statusCode: 200, description: &quot;OK&quot;)此时, 可以通过元组内值的 名称 来访问元素的值:print(&quot;statusCode = \\(http200Status.statusCode)&quot;)// 打印结果: &quot;statusCode = 200&quot;print(&quot;statusMessage = \\(http200Status.description)&quot;)// 打印结果: &quot;statusMessage = OK&quot;元组 可以用于 方法返回多个值. 如果我们的方法需要返回多个不同的值的时候, 元组 将会变得非常有用.  注意元组 对于简单的数据结构来说非常有用. 但是他不适合复杂的数据结构. 如果您的数据结构非常复杂, 则建议使用 结构体 或者 类, 而不是 元组."
+  },
+  
+  {
+    "title": "PHP 如何通过方法名判断方法是否实现并调用方法",
+    "url": "/posts/PHP-%E5%A6%82%E4%BD%95%E9%80%9A%E8%BF%87%E6%96%B9%E6%B3%95%E5%90%8D%E5%88%A4%E6%96%AD%E6%96%B9%E6%B3%95%E6%98%AF%E5%90%A6%E5%AE%9E%E7%8E%B0%E5%B9%B6%E8%B0%83%E7%94%A8%E6%96%B9%E6%B3%95/",
+    "categories": "开发总结, PHP",
+    "tags": "",
+    "date": "2019-08-11 22:43:29 +0800",
+    
+
+
+
+
+
+    "snippet": "在开发中, 你可能会遇到要根据 Request 带过来的参数来决定调用什么方法的情况.举例比如, 现在有一个统一接口: https://zhk1024.com/json?action=blogs. 需要根据 action 参数的值 blogs 调用一个 blogs 的方法.我们的接口类如下:&amp;lt;?php// 接口类class JSON extends BaseClass {    // 接口类的统一入口    public function action() {        $action = $_GET[&#39;action&#39;];        if (method_exists($this, $action)) {            $this-&amp;gt;$action();        } else {            // 报错信息            // 未定义的 action        }    }    // 获取 blog 文章列表    private function blogs() {        // 数据处理    }        // 获取 blog 分类列表    private function categorys() {        // 数据处理    }}判断方法是否定义此处, method_exists 方法可以判断一个 类 或者 对象 是否有定义指定的方法:method_exists ( mixed $object , string $method_name ) : bool  参数object       对象示例或者类名method_name  方法名通过字符串调用方法判断如果是存在, 则就要调用该方法.通过字符串调用对象的方法是:$method_name = &#39;blogs&#39;;$obj-&amp;gt;$method_name();但是, 直接使用 &#39;method_name&#39; + () 这样是不行的:// 这样写是会报错的$obj-&amp;gt;&#39;blogs&#39;();"
+  },
+  
+  {
+    "title": "Swift 5.1 学习 (3) : 基本数据类型",
+    "url": "/posts/Swift-5.1-%E5%AD%A6%E4%B9%A0-(3)-%E5%9F%BA%E6%9C%AC%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2019-08-09 18:56:31 +0800",
+    
+
+
+
+
+
+    "snippet": "Swift 中基础的数据类型跟 C语言 和 OC 中也比较相似.整形(int)整形 就是我们正常认知中的 整数, 比如 42 和 -23. 他不包含 小数 部分. 整数 包括 有符号 的 正数 和负数, 也包括 无符号 的 0.Swift 中提供了 8, 16, 32 和 64 位的 带符号 和 无符号 的整数. 这些整数遵循类似 C语言 的命名约定:| Bit  | 无符号 | 有符号 || —- | —— | —— || 8    | UInt8  | Int8   || 16   | UInt16 | Int16  || 32   | UInt32 | Int32  || 64   | UInt64 | Int64  |整形数字范围可以通过 Int 的 min 和 max 属性读取 最小值  和 最大值.let minValue = UInt8.min  // minValue = 0let maxValue = UInt8.max  // maxValue = 255Int一般情况下, 我们无需选择特定 bit 的数字类型. Swift 提供了一个数据类型 Int, 它的大小跟系统有关.  在 32 位系统中, UInt 相当于 UInt32.  在 64 位系统中, UInt 相当于 UInt64.  注意只有在有特别的需求, 需要使用与平台字大小的无符号整形数字的时候, 才使用 UInt. 否则, 推荐使用 Int, 即使你已经确定存储的数据是 非负数.使用统一的 Int 类型可以避免在不同数字类型之间进行转换的情况.浮点数浮点数 就是一个 带小数部分 的数字. 比如: 3.1415926, -2.7.浮点类型 值的范围比 整形 大的多. 并且可以存储比 整形 数 大的多 或 小得多 的数.Swift 提供了 2 种浮点类型:  Double 表示一个 64位 的浮点数.  Float 表示一个 32位 的浮点数.  注意Double 的精度至少为 15位 小数, Float 的精度低至 6位 小数. 在开发中使用哪个类型取决于需求的数字的 范围 和 精度. 当 2 种类型都合适的情况下, Double 是首选.类型安全和类型推断Swift 是一种 类型安全 的编程语言. 如果一个需要 String 类型作为参数的代码段就不能传入 Int 类型的参数.Swift 是类型安全的, 因此在代码编译阶段会执行类型检查. 如果代码中有类型不匹配就会报 编译错误. 这也可以帮助我们在开发过程中尽早发现错误.当我们在处理不同类型的值的时候, 类型检查 可以帮助我们避免错误. 当然, 也不是说所有的 常量 和 变量 都必须指定声明其具体类型. 如果我们没有指定数据类型, Swift 就会使用 类型推断 来确定适合的类型. 类型推断 可以使编译器在编译阶段通过检查 常量/变量 的 值 来推断其 类型.如果你给一个新的 常量 赋值为 42 而未声明其类型, 类型推断 就会推断出这个常量为 Int 类型:let meaningOfLife = 42// meaningOfLife 被推断为 Int 类型同样的, 如果你没有为 浮点型 常量声明其具体类型, 类型推断 会推断其为 Double 类型:let pi = 3.14159// pi 被推断为 Double 类型如果一个表达式中包含了 整数 和 浮点数, 则会从上下文来推断其为 Double 类型:let anotherPi = 3 + 0.14159// anotherPi 也会被推断为 Double 类型数字字面值一个 整形 数字可以被写成一下几种形式:| 进制     | 前缀   || ——– | —— || 十进制   | 无前缀 || 二进制   | 0b     || 八进制   | 0o     || 十六进制 | 0x     |以下几种写法都代表了数字 17:let decimalInteger = 17           // 十进制let binaryInteger = 0b10001       // 二进制let octalInteger = 0o21           // 八进制let hexadecimalInteger = 0x11     // 十六进制浮点型 数字可以被表示为 十进制(无前缀)  和 十六进制(0x前缀). 浮点型 必须在 小数点 两侧都有 1 个数字 (或者十六进制数字).  十进制 浮点数可以有一个可选的 指数, 由大写或者小写的 e 表示.  十六进制 浮点数必须有一个指数, 用大写或小写的 p 表示.十进制 的以 exp 为指数的浮点数, 底数 * 10^exp.  1.25e2 等同于 1.25 * 10^2 或者 125.0.  1.25e-2 等同于 1.25 * 10^-2 或者 0.0125.十六进制 的以 exp 为指数的浮点数, 底数 * 2^exp.  0xFp2 等同于 15 * 2^2 或者 60.0.  0xFp-2 等同于 15 * 2^-2 或者 3.75.以下几种写法的值都为 12.1857:let decimalDouble = 12.1875let exponentDouble = 1.21875e1let hexadecimalDouble = 0xC.3p0数字还可以加入额外的 &quot;_&quot;  或者 &quot;0&quot; 来提高其可读性, 并且其值不会受到影响:let paddedDouble = 000123.456let oneMillion = 1_000_000let justOverOneMillion = 1_000_000.000_000_1数字类型转换在开发中, 尽管已知 常量 或者 变量 存储的是无符号的数字, 也应该尽量使用 Int 类型. 使用默认的 Int 类型就可以在代码中直接做运算.仅仅在特殊需求的情况下选择其他的 整数类型.整形转换不同 数值类型 的 常量/变量 所能存储的数值范围是不同的. 一个 Int8 的 常量/变量 可以能存储的数值范围为 -128 ~ 127. 然而, 一个 UInt8 类型的 常量/变量 能够存储数值的范围为 0 ~ 255. 当你尝试把一个超出存储范围的数字存储进 常量/变量 的时候, 代码编译就会报错:let cannotBeNegative: UInt8 = -1// UInt8 不能存储负数, 因此此处会报错let tooBig: Int8 = Int8.max + 1// Int8 不能存储一个大于 Int8 最大值的数值, 此处也会报错因为每种 数值类型 可以存储的数值范围都不想同, 因此必须根据不同情况来选择合适的 数值类型. 这样可以防止隐式转换错误. 且有助于在代码中明确类型转换的意图.可以通过使用现有 数值 作为目标类型的初始值来初始化一个新的 常量/变量 达到从一个数值类型转换为另一个数值类型的目的. 在下面的事例中, 常量 twoThousand 为 UInt16, 另一个 常量 one 是 UInt8. 因为他们的 类型不同, 因此无法直接进行 加法运算. 所以在此案例中调用 UInt16(one), 使用 one 的值作为初始值创建一个新得 UInt16 类型的数值, 然后对其和 twoThousand 做运算:let twoThousand: UInt16 = 2_000let one: UInt8 = 1let twoThousandAndOne = twoThousand + UInt16(one)因为 + 两侧现在都是 UInt16 类型, 因此加法运算是可以进行的. 因为此处是 2 个 UInt16 类型进行运算, 所以运算结果也被推断为 UInt16 类型.整形和浮点型转换整形 和 浮点型 之间的转换必须是显式转换.let three = 3let pointOneFourOneFiveNine = 0.14159let pi = Double(three) + pointOneFourOneFiveNine// pi = 3.14159, 被推断为 Double 类型案例中 常量 three 的值用于创建了一个 Double 类型的值, 此时 + 两边值的类型均为 Double 所以运算是被允许的.浮点型 转换为 整形 同样的也必须是 显式转换. 整形 可以使用 Double 或 Float 来初始化.let integerPi = Int(pi)// integerPi 等于 3, 并且被推断为 Int 类型当 浮点型 被用于初始化为 整形 的时候就会被 截断. 比如: 4.75 会被截断为 4. -3.9 被截断为 -3.类型别名类型别名 是现有类型定义的 替代名称. 定义 类型别名 使用 typealias 关键字.当你希望使用上下文更加合适的名称来引用现有类型时, 类型别名 将会非常有用.typealias AudioSample = UInt16定义了 类型别名 之后, 就可以在任何可能使用 原始名称 的地方使用 别名.var maxAmplitudeFound = AudioSample.min// maxAmplitudeFound 等于 0此处 AudioSample 是为 UInt16 定义的别名, 因此 AudioSample.min 等价于 UInt16.min, 所以 maxAmplitudeFound 的值为 0.布尔类型Swift 有一个基本布尔类型 Bool. 布尔值被成为 逻辑值, 因为他们只能是 真 或 假. Swift 提供了 2 个布尔常量值 true 和 false.let orangesAreOrange = truelet turnipsAreDelicious = false此处因为 orangesAreOrange 和 turnipsAreDelicious 使用 布尔值 初始化, 因此被推断为 布尔类型.如果你使用 true 或 false 初始化了 常量/变量, 就无需声明其类型为 Bool. 当使用已知类型的值初始化 常量/变量 时候, 类型推断有助于使代码更加简介和易读.布尔值在处理条件语句时候特别有用, 例如 if 语句:if turnipsAreDelicious {    print(&quot;Mmm, tasty turnips!&quot;)} else {    print(&quot;Eww, turnips are horrible.&quot;)}// 打印结果: &quot;Eww, turnips are horrible.&quot;Swift 的 类型安全 可以防止 非布尔值 替换 Bool 类型的情况. 下面的例子就会报错:let i = 1if i {    // 此处会报编译错误.}但是下面的例子是可以的:let i = 1if i == 1 {    // 可以编译通过}比较语句 i == 1 结果的类型为 Bool, 因此第二个例子可以正常编译通过.与其他 类型安全 事例一样, 这种方法避免了意外的错误, 并确保特定代码段的意图始终清晰."
+  },
+  
+  {
+    "title": "Referencing initializer &#39;init(_:id:content:)&#39; on &#39;ForEach&#39; requires that &#39;xxxxxx&#39; conform to &#39;Hashable&#39;",
+    "url": "/posts/Referencing-initializer-init(_id-content)-on-ForEach-requires-that-xxxxxx-conform-to-Hashable/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2019-08-08 23:40:22 +0800",
+    
+
+
+
+
+
+    "snippet": "iOS13 苹果推出了 SwiftUI, 迫不及待的安装了 Xcode 11 来尝尝鲜.照着官方教程一步一步敲代码, 还是报了这个错误:Referencing initializer &#39;init(_:id:content:)&#39; on &#39;ForEach&#39; requires that &#39;xxxxxx&#39; conform to &#39;Hashable&#39;.之所以报这个错误是因为: ForEach 是 SwiftUI 中一个用来遍历元素, 并生成对应 View collection 的类型. ForEach 的参数为一个 数组, 但是数组内的元素必须要满足 Identifiable 协议. 要解决这个问题可以通过某个支持 Hashable 的 keypath 获取一个等效的元素为 Identifiable 的数组 .此处最简单的解决方法就是:加入这段代码:extension xxxxxx: Hashable {}然后编译顺利通过."
+  },
+  
+  {
+    "title": "Swift 5.1 学习 (2) : 常量和变量",
+    "url": "/posts/Swift-5.1-%E5%AD%A6%E4%B9%A0-(2)-%E5%B8%B8%E9%87%8F%E5%92%8C%E5%8F%98%E9%87%8F/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2019-08-07 23:08:51 +0800",
+    
+
+
+
+
+
+    "snippet": "常量 和 变量 将 变量名 (比如: name 或者 age) 和一个 值 (比如: 张三 或者 18) 关联起来. 常量 的值一旦设置就 不可改变.变量 可以在将来设置不同的值.声明常量和变量常量 和 变量 在使用之前都必须事先进行声明. 声明 常量 使用 let 关键字, 声明 变量 使用 var 关键字:// 常量let name = &quot;张三&quot;// 变量var age = 18也可以在一行内同时声明多个 常量 或者 变量, 常量 或者 变量 之间使用 , 分隔:let a = 1, b = 2, c = 3var x = 4, y = 5, z = 6  提示如果一个 存储值 在代码执行的整个过程中都不会被修改, 则使用 let 关键字来声明为 常量.变量 仅仅在 存储值 在代码执行过程中需要修改的时候使用.类型注解声明 常量 和 变量 时候可以通过 类型注解 来明确他们 可以存储的值的类型.同样的, 你也可以这样在一行定义多个 变量:var red, green, blue: Double常量和变量的命名常量 和 变量 的名称可以包含 几乎所有字符 , 包括 Unicode 字符:let π = 3.14159let 你好 = &quot;你好世界&quot;但是, 常量 和 变量 名都不能包含: 空格, 数学符号, 箭头, 私有的Unicode标量, 方框绘制字符. 名称可以包含 数字, 但是 不能以数字开头.一旦声明了某个类型的 常量 或者 变量, 就不能再声明 同名 的 常量 或者 变量. 也不能修改其 存储类型, 也无法把 常量 修改为 变量, 反之亦然.  提示如果需要声明的 常量 或 变量 的名称是 Swift 的 保留关键字, 你可以使用 ``` 符号包括该 常/变量名.但是一般不推荐使用 保留关键字 作为 常/变量名.变量赋值你可以通过 = 来改变一个已经存在的 变量 的值:var name = &quot;张三&quot;name = &quot;李四&quot;但是 常量 的值不可改变:let age = 18age = 19这样的写法将会报编译错误: age cannot be changed.常量和变量的打印你可以通过 print(_:separator:terminator:) 方法来打印 常量 和 变量:print(name)// 打印结果: 李四print(_:separator:terminator:) 方法是一个全局的方法. 他可以以合适的方法在 控制台 打印一个或者多个值. 其中 separator 和 terminator 2 个参数有默认值, 因此在调用的时候可以省略掉. 默认情况下, 打印结果的尾部会输出一个 换行符 来终止打印. 如果想要不带 换行符 的输出结果, 可以传入 空字符串 作为参数 terminator 的值. 比如:print(name, terminator: &quot;&quot;)Swift 使用字符串插值的方式把 常/变量名 包含在字符串中作为 占位符, 并在输出时候替换成 常/变量 的值. 使用 () 来括住 常/变量名, 并在括号前使用 \\ 转义:print(&quot;我的名字是: \\(name)&quot;)// 打印结果: 我的名字是: 李四注释注释 是代码中 非可执行的文本, 用于 注释 或 提醒. 编译器在编译代码时候会忽略掉 注释.Swift 中的注释和 C, OC 中的注释非常相似.单行注释单行注释 以 // 开始, 注释单行内容. 例如:// 这是一个单行注释多行注释多行注释 以 /* 开始, 以 */ 结束, 可以注释多行内容. 例如:/*这是多行注释的第一行这是多行注释的第二行*/与 C 和 OC 中的多行注释不同的是, Swift 中的 多行注释 可以进行 嵌套. 例如:/* 第一个单行注释开始/* 嵌套的多行注释 */第一个单行注释结束*/嵌套 多行注释 可以快速注释大块代码, 尽管注释快内已经包含了 多行注释.关于分号不想其他编程语言, Swift 中可以省略代码语句尾部的 ;, 当然你写上 ; 也不会有任何问题. 但是同一行内如果有多句代码, 需要使用 ; 来分割. 例如:let cat = &quot;猫&quot;; print(cat)// 打印结果: &quot;猫&quot;"
+  },
+  
+  {
+    "title": "Swift 5.1 学习 (1) :  前言",
+    "url": "/posts/Swift-5.1-%E5%AD%A6%E4%B9%A0-(1)-%E5%89%8D%E8%A8%80/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2019-08-06 23:15:36 +0800",
+    
+
+
+
+
+
+    "snippet": "Swift 是用于开发 iOS, macOS, watchOS 和 tvOS 应用的一门新语言. 尽管如此, 使用 C, OC 开发应用很多方面的经验都可以应用于 Swift 开发.Swift 提供了独立的基于 C 和 OC 的类型.            类型      说明                  Int      整形              Double      浮点型              Float      浮点型              Bool      布尔类型              String      字符串      Swift 还提供了三种强大的 集合类型:            类型      说明                  Array      数组              Set      集合              Dictionary      字典      像 C语言 一样, Swift 使用 变量 去 存储值, 并通过 标识名称 (变量名) 引用值. Swift 中还大量使用了 常量, 常量 的值是不可修改的. 当一些无需修改的值使用 常量 时候可以使你的代码更加的 安全.除了我们熟悉的类型, Swift 中还引入了特有的类型, 比如 元组. 元组 能够让你 创建 和 传递 一组值. 比如, 使用 元组 来使 函数 或者叫 方法 一次 返回多个值.Swift 还引入了 可选类型, 用于处理 空值 的情况. 可选类型 表示他的值可能是 x, 也可能为 空值. 当用于 指针 时候, 可选类型 和 OC 中的 nil 用法一样. 不同的是 可选类型 可以用于 所有类型, 而 nil 只能用于 类实例对象.可选类型 不仅仅比 OC 中的 nil 更加 安全 和具有 表现力, 他还是 Swift 中许多强大特性的核心.Swift 是一种 类型安全 的编程语言. 这意味着 Swift 可以帮助你明确代码可以使用的值的类型. 如果一部分代码需要一个 字符串 类型, 类型安全 可以防止你传入一个 Int 类型的值. 同样的, 类型安全 可以防止你将 可选类型 的 String 类型传给 非可选 的 String 类型的代码段. 类型安全 可以帮助你尽早的发现和修复开发过程中出现的错误."
+  },
+  
+  {
+    "title": "记一次 Admob 广告被停经历",
+    "url": "/posts/%E8%AE%B0%E4%B8%80%E6%AC%A1-Admob-%E5%B9%BF%E5%91%8A%E8%A2%AB%E5%81%9C%E7%BB%8F%E5%8E%86/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2019-08-05 15:31:52 +0800",
+    
+
+
+
+
+
+    "snippet": "前几天收到了一封来自 Admob 的邮件, 内容告诉我应用违规了, App 内投放的广告已经被全部停止.根据邮件提示, 登录上 Admob 的管理后台, 看到的信息如下:逐条分析:1. 虚假宣称可下载或可传输的内容.关于这条, 的确没太多头绪. 因为 App 内接入了多家广告平台的广告, 难道是哪家广告出问题了?2. 链接至不存在的内容.说起 链接, 除了 广告点击跳转 以外, 就剩下我 App 内的文章了, 因为文章链接都是来自我自己服务器, 检查了服务器一切都正常, 就暂时排除了是自己内容的问题. 当然此处是自己以为.3. 将用户重定向至不相关和/或误导性的网页.说起 重定向, 只能想到 跳转外部 此处也只能认为或许是其他广告平台广告存在问题?4. 网页上的文字与网站的主题和/或业务模式无关.这点可以 100% 排除, 因为 App 内的每条内容和文章都是我手动编辑的. 主题无关的内容我也不会发不上去.分析到这里, 就决定先把其他广告平台的广告停止投放. 然后也这么做了. 接着提交了审核.审核结果很快就出来了: 问题并未解决.问题所在此时已经排除其他广告平台出现问题的选项了. 只好认真排查自己的内容.我就挨个查看 App 内的文章, 所有的文章页面都能够正常打开, 不存在 跳转出错 或者 重定向 的问题.其中有几篇文章下面的 参考链接, 也逐一打开看了. 最终发现是一篇发布较早的文章下面的 参考链接 已经变成了 死链.参考链接 的页面已经打不开了, 然后重新编辑文章内容, 去掉参考连接之后提交审核.审核结果  我们已审核完您的应用，未发现违规问题。第二天广告就重新在 App 内展示了.至此, 问题已经成功得到解决了."
+  },
+  
+  {
+    "title": "UITabBar 内容被挤压的一个坑",
+    "url": "/posts/UITabBar-%E5%86%85%E5%AE%B9%E8%A2%AB%E6%8C%A4%E5%8E%8B%E7%9A%84%E4%B8%80%E4%B8%AA%E5%9D%91/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2019-08-03 13:37:46 +0800",
+    
+
+
+
+
+
+    "snippet": "最近被 iOS 模拟器 摆了一道. 真的是坑.项目中需要一个这样的位于页面 底部的Bar效果如图:需求中需要 3 个 item 的 bar, 并且需要向下做 平移动画 达到 隐藏 和 出现 的效果.于是选择了自己封装.视图结构入下:UIView  |- UITabBar此处之所以选择 UITabBar 而没有选择 UIToolBar 是因为 UITabBar 一直是我们非常熟悉的一个 UI控件, 但是我从来未单独的使用过(一直直接使用UITabBarController), 因此此处就作为尝试, 选择了 UITabBar.一切都非常顺利的封装完成, 并且在 模拟器 上效果如上效果图所示, 即为 模拟器 实际效果的截图.但是在真机上却并未达到预期效果, 截图如下:出现这个情况的原因是因为 UITabBar 的内容被挤压了.黑色的部分为 UITabBar 但是作为载体的父视图 frame 是正常的 49 + safeArea.bottom.看一下我的约束:- (void)setupUI {    self.alpha = 0.85f;    [self addSubview:self.tabbar];    [_tabbar mas_makeConstraints:^(MASConstraintMaker *make) {        make.left.right.top.mas_equalTo(0.0f);    }];}此处仅仅对 _tabbar 的 left, right 和 top 做了约束是因为 UITabbar 其有自身的默认高度, 我们只需让父视图的 高度 合适, UITabbar 只需自己调整 高度 即可. 在 模拟器 上面的确达到了我预想的效果.然而在 真机 上却出现了 UITabbar 内部被挤压的情况.这个显然是 UITabbar 的 BUG. 之所以说是 BUG 是因为造成这个问题的原因是这样的:我们知道, 在 刘海屏 上的时候 UITabBar 会自动的调整 高度, 同时其 title 和 image 都会被向上移动, 来防止 item 被 遮挡.但是, 在 UITabbar 的 safeArea.bottom == 0 的时候, 显然是 frame 并未做调整, 但是内容却被 挤压 了. 因此造成了这种结果.解决方法:- (void)layoutSubviews {    [super layoutSubviews];    _tabbar.frame = self.bounds;}这样的话, 因为我们的 容器视图 的 frame 就是计算出的正确的信息, 那就让 UITabBar 直接平铺满我们的整个 容器视图 好了.当然, 使用 Masonry 约束也可以, 但是因为上篇: 记一次 UICollectionView 卡顿掉帧的问题 中由于 自动布局 的性能问题, 给我的项目造成了一些 BUG, 因此既然是要 占满 我们的 容器视图, 直接在 layoutSubviews 里面来进行布局计算好了.虽然这个问题的确不是什么常见问题, 但是还是需要做个总结来加深一下印象, 如果有遇到同样问题的同学, 也可以加快下解决问题的速度.此外, 模拟器 也并非是 100% 的与 真机 效果同步, 因此最终还是 要以真机效果为准."
+  },
+  
+  {
+    "title": "记一次 UICollectionView 卡顿掉帧的问题",
+    "url": "/posts/%E8%AE%B0%E4%B8%80%E6%AC%A1-UICollectionView-%E5%8D%A1%E9%A1%BF%E6%8E%89%E5%B8%A7%E7%9A%84%E9%97%AE%E9%A2%98/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2019-08-01 11:32:16 +0800",
+    
+
+
+
+
+
+    "snippet": "简述最近项目有一个 单列表页面 计划要修改成 多列表页面, 虽然目前还是单列表, 但是既然有这样的计划, 就自行先实现了.一开始 单列表 使用的是 UITableView 全程流畅滚动. 但是换成 UICollectionView 的 单列表 之后, 列表就开始出现了滑动 掉帧 的情况. 所有逻辑都是一模一样的, 仅仅是换了一个列表控件, 这个情况还是蛮奇怪的, 只好查找一下是不是什么被地方忽略了.网上一大堆 UITableView 和 UICollectionView 滚动视图的优化文章, 也看了不少, 但是这个列表真的是简单到不能再简单了 (一个占满了 Cell 的 UIImageView 而已), 之前写那么多这样的列表也没出现 掉帧 的情况, 只好一一排查.排查问题优化方面的问题有简单有复杂, 先从简单的方面做起:1.是否主线程处理大量数据造成了卡顿?大批量的数据处理都在 子线程 进行, cell 也只是在 setter 里面进行简单的 值展示 赋值和一个 图片文件读取 以及 UIImage 对象的赋值.注释掉 文件读取 代码之后卡顿掉帧的情况依旧存在.注释掉整个 setter 方法之后卡顿依旧.2.是否有多余的无需实现的代理方法?因为列表高度是根据内容变化的, 因此代理方法仅仅实现了 UICollectionViewDelegateFlowLayout 的- (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout*)collectionViewLayout sizeForItemAtIndexPath:(NSIndexPath *)indexPath {    // 宽度: collectionView 的宽度    // 高度: 为了适应不同屏幕, 高度 * 宽度比系数    return CGSizeMake(CGRectGetWidth(collectionView.bounds), height * scale);}其他需要计算的代理方法均未实现. 针对此处优化, 就对 每行的高度 做了 缓存, 问题也未得到解决.3.检查一下 Cell 内部 UI 约束的代码就这么多, 的确是简单到不能再简单了.#pragma mark - UI- (void)setupUI {    [self.contentView addSubview:self.imageView];    [_imageView mas_makeConstraints:^(MASConstraintMaker *make) {        make.edges.mas_equalTo(UIEdgeInsetsZero);    }];}既然要优化, 此处 Masonry 的约束也不是必须的, 这样写也是因为布局简单, 认为不太会造成太严重的性能上的问题.把布局的代码改成这样:- (void)layoutSubviews {    _scrollView.frame = self.bounds;}跑起来看看, 不卡了…真的不敢相信…就这么一个 约束 就能造成这么严重的性能问题???总结这次的问题从发现到解决花费了将近 3 个小时, 仅仅一个看似没有任何问题的 自动布局 造成的很严重的问题. 自动布局 的 性能问题 对于做过一段时间 iOS 开发的来讲, 都是常识. 但是自认为:  Cell 布局简单, 自动布局的约束造成的性能问题微乎其微.因此从一开始就没从这方面来考虑这个问题, 导致花了半个下午的时间来解决这么一个看似简单的 BUG. 看似一个简单的 约束 却让整个列表产生了严重的性能问题.就当是偷懒和安于习惯的惩罚吧, 吸取教训才是最重要的."
+  },
+  
+  {
+    "title": "iOS 配置 App 的 Associated Domains",
+    "url": "/posts/iOS-%E9%85%8D%E7%BD%AE-App-%E7%9A%84-Associated-Domains/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2019-07-30 13:09:22 +0800",
+    
+
+
+
+
+
+    "snippet": "概述Associated Domains 是关联我们的 网站 和 App 的前置条件. 关联我们的 网站 和 App 的时候, 必须在 App 中配置 entitlement 文件, 同时也要在我们的网站中包含一个 apple-app-site-association 文件.Shared web credentials, Universal links 和 Handoff 都需要该前置条件.Xcode 工程配置配置 Entitlement 文件:  在 Xcode 工程中的 Capabilities 中打开 Associated Domains 配置项.  点击 + 添加一行配置项.  在 Domains 中填入我们关联网站的 域名. 此处支持通配符 *, 可以使用 *.example.com 的形式来匹配关联所有子域名.URL 配置格式如下:&amp;lt;服务类型&amp;gt;:&amp;lt;完整的域名&amp;gt;[:端口]服务类型的选择:  共享网络凭证 (Shared web credentials): webcredentials.  Universal links: applinks.  Handoff: activitycontinuation.  举例如果 共享网络凭证 (Shared web credentials) 就写成: webcredentials:zhk1024.com服务端配置服务端 的配置仅仅需要在我们的服务器目录下增加一个文件名为 apple-app-site-association 的文件(无扩展名).这个文件内存储的是 App 和 网站 关联的配置信息列表.以 共享网络凭证 (Shared web credentials) 为例, 内容如下:{   &quot;webcredentials&quot;: {       &quot;apps&quot;: [    &quot;D3KQX62K1A.com.example.DemoApp&quot;,                    &quot;D3KQX62K1A.com.example.DemoAdminApp&quot; ]    }}其中关联信息列表的格式为:&amp;lt;Team Identifier&amp;gt;.&amp;lt;Bundle Identifier&amp;gt;D3KQX62K1A 为我们的 团队标识符, com.example.DemoAdminApp 为我们的域名.该文件可以存储在 根目录 下, 或者 .well-known 目录下. 必须保证以下 URL 能够访问到文件内容:https://example.com/apple-app-site-association或者https://example.com/.well-known/apple-app-site-association  注意此处必须使用 HTTPS 且不能做任何的 重定向.iOS 9.3.1 及以上系统版本, 该文件最大不能超过 128kb.验证文件当 App 安装完成之后, iOS 就会尝试从 entitlement 文件中配置的域名所在的服务器中下载并验证关联文件. 此处就要求配置信息与我们的 App 必须是一致的.  注意如果站点有多个子域名, 则每个子域名都需要分别配置. 并且每个子域名都需要配置自己的 apple-app-site-association 文件.验证可能会失败的情况  配置文件不存在, 或者配置列表中未包含该 App 的配置信息 (团队标识符 + App标识符).  服务器返回 300-499 之间的状态码, 包含 重定向.如果服务器返回了 500-599 之间的状态码, iOS 就会认为该文件暂时不可用, 然后重试. 默认每 3 小时重试一次, 最多重试 8 次.App 与 域名 关联成功后, 就会一直生效直到 App 被 卸载. 在开发测试过程中, 如果更新了 关联文件 可以 删除 掉 App 并 重新安装 来快速更新我们的修改结果."
+  },
+  
+  {
+    "title": "iOS 实现垃圾短信服务端过滤 (Message Filter Extension)",
+    "url": "/posts/iOS-%E5%AE%9E%E7%8E%B0%E5%9E%83%E5%9C%BE%E7%9F%AD%E4%BF%A1%E6%9C%8D%E5%8A%A1%E7%AB%AF%E8%BF%87%E6%BB%A4-(Message-Filter-Extension)/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2019-07-29 13:52:57 +0800",
+    
+
+
+
+
+
+    "snippet": "回顾如上篇 iOS 实现垃圾短信客户端过滤 (Message Filter Extension) 中所讲, 当本地 App扩展 无法判断出短信是否为 垃圾短信 时候可以通知 iOS, 让其发送数据到我们的 关联服务器 来进行分析.通知 iOS 发送数据到我们服务器的方法为:- (void)deferQueryRequestToNetworkWithCompletion:(void (^)(ILNetworkResponse *response, NSError *error))completion;当 App扩展 调用此方法之后, iOS 就会发起一个 HTTPS 的 POST 请求到我们的 关联服务器. 既然要让 iOS 来请求我们的服务器, 就肯定要告诉 iOS 我们服务器接口的地址:在 App扩展 的 target 下的 info.plist 中添加如下配置:&amp;lt;key&amp;gt;NSExtension&amp;lt;/key&amp;gt;    &amp;lt;dict&amp;gt;        &amp;lt;key&amp;gt;NSExtensionPrincipalClass&amp;lt;/key&amp;gt;            &amp;lt;string&amp;gt;MessageFilterExtension&amp;lt;/string&amp;gt;        &amp;lt;key&amp;gt;NSExtensionAttributes&amp;lt;/key&amp;gt;            &amp;lt;dict&amp;gt;                // 服务器接口地址                &amp;lt;key&amp;gt;ILMessageFilterExtensionNetworkURL&amp;lt;/key&amp;gt;                &amp;lt;string&amp;gt;https://api.zhk1024.com/index.php/api/message&amp;lt;/string&amp;gt;            &amp;lt;/dict&amp;gt;        &amp;lt;key&amp;gt;NSExtensionPointIdentifier&amp;lt;/key&amp;gt;        &amp;lt;string&amp;gt;com.apple.identitylookup.message-filter&amp;lt;/string&amp;gt;     &amp;lt;/dict&amp;gt;其中 ILMessageFilterExtensionNetworkURL  字段 https://api.zhk1024.com/index.php/api/message 就是我们的服务器接口地址. 通过此接口来处理过滤逻辑.另外还要配置 Associated Domains 参考: 配置说明  注意Info.plist 是 扩展 的配置文件, 别配置到 宿主App 的 Info.plist 中.服务端服务器也要根据文档进行一些配置: 文档地址iOS 发起的 POST 请求数据信息如下:POST /server-endpoint HTTP/1.1Accept: */*Content-Type: application/json; charset=utf-8Content-Length: 148{    &quot;_version&quot;: 1,    &quot;query&quot;: {        &quot;sender&quot;: &quot;14085550001&quot;,        &quot;message&quot;: {            &quot;text&quot;: &quot;This is a message&quot;        }    },    &quot;app&quot;: {        &quot;version&quot;: &quot;1.1&quot;    }}数据部分为 JSON 格式.服务端简单实现服务端利用 PHP 来实现, 但是一定是要 HTTPS 的接口. Apple 如果主动访问我们的服务器, 一般都会强制要求 HTTPS.简单的接口实现如下:public function message(){    $message = $_POST[&#39;query&#39;][&#39;text&#39;];    $res = strpos($message, &#39;赌场&#39;);    header(&quot;Content-type:application/json;charset=utf8&quot;);    echo json_encode(array(&#39;res&#39; =&amp;gt; $res));}我们仅仅简单判断一下短信内容是否包含了 赌场 这样的关键词. 更加复杂的分析逻辑可以自行实现.接口返回的数据格式如下:{    res: false}  注意测试服务返回的 res 字段的含义是短信内容是否包含了被过滤关键词."
+  },
+  
+  {
+    "title": "iOS 实现垃圾短信客户端过滤 (Message Filter Extension)",
+    "url": "/posts/iOS-%E5%AE%9E%E7%8E%B0%E5%9E%83%E5%9C%BE%E7%9F%AD%E4%BF%A1%E5%AE%A2%E6%88%B7%E7%AB%AF%E8%BF%87%E6%BB%A4-(Message-Filter-Extension)/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2019-07-28 22:53:06 +0800",
+    
+
+
+
+
+
+    "snippet": "Message Filter Extension 是 Apple 为开发者提供的短信过滤 App 扩展.概述当我们的设备收到 未知联系人 的短信的时候,短信App 就会调用我们创建的 Message Filter Extension 来帮我们过滤垃圾短信. Message Filter Extension 可以让我们定义自己的 过滤规则 来过滤垃圾短信.  提示扩展作用的对象仅仅限于来自 未知发件人 的 SMS 和 MMS 消息. 来自 用户通讯录 内联系人的信息不会被过滤.App 扩展本地过滤短信的工作流程短信App 通过一个 ILMessageFilterQueryRequest 实例对象来传递短息信息到 App扩展. 然后 App扩展 使用自定义的 过滤规则 判断短信是否是垃圾信息. 然后通过一个 ILMessageFilterQueryResponse 实例对象, 把判断结果返回给 短信App.通过服务器过滤短信的工作流程如果你的本地 App扩展 不能直接判断出结果, 则 App扩展 会通知 短信App 发送短信数据到与 App扩展 关联的服务器, 由服务器处理并返回处理结果. 短信App 得到服务器的响应后, 把服务器的响应数据传递给 App扩展, 由 App扩展 处理服务器返回的数据, 并把判断结果返回给 短信App.  提示出于安全的考虑, 与服务器的数据通信将会由 iOS 系统来完成. App扩展 无法直接访问网络.并且 App扩展 也无法通过写入数据到 App Group 的公共存储空间到来共享数据给 宿主App.实现创建 Message Filter Extension选择 File -&amp;gt; New -&amp;gt; Target... -&amp;gt; Message Filter Extension, 创建新的 target.代码在新创建的 Target 中只有 MessageFilterExtension 一个类. 我们所有的逻辑都会在这里来完成.处理 短信App 的请求在接收到 未知联系人 的短信时候此方法会被调用:- (void)handleQueryRequest:(ILMessageFilterQueryRequest *)queryRequest context:(ILMessageFilterExtensionContext *)context completion:(void (^)(ILMessageFilterQueryResponse *))completion {    // 使用本地规则过滤短信    ILMessageFilterAction offlineAction = [self offlineActionForQueryRequest:queryRequest];    switch (offlineAction) {        case ILMessageFilterActionAllow:        case ILMessageFilterActionFilter: {            // 返回本地规则过滤结果            ILMessageFilterQueryResponse *response = [[ILMessageFilterQueryResponse alloc] init];            response.action = offlineAction;            completion(response);            break;        }        case ILMessageFilterActionNone: {            // 根据本地规则无法判断是否是垃圾短信            // 通过服务器来处理            [context deferQueryRequestToNetworkWithCompletion:^(ILNetworkResponse *_Nullable networkResponse, NSError *_Nullable error) {                ILMessageFilterQueryResponse *response = [[ILMessageFilterQueryResponse alloc] init];                response.action = ILMessageFilterActionNone;                 if (networkResponse) {                    // 如果从服务器获取到了服务器的处理结果, 则解析服务器返回的数据, 并返回给 短信App.                    response.action = [self actionForNetworkResponse:networkResponse];                } else {                    NSLog(@&quot;Error deferring query request to network: %@&quot;, error);                }                           completion(response);            }];            break;        }    }}自定义方法, 通过本地规则过滤垃圾短信/** 处理短信过滤内容 @param queryRequest 短信数据 @return 处理结果 */- (ILMessageFilterAction)offlineActionForQueryRequest:(ILMessageFilterQueryRequest *)queryRequest {    // 1. 可以根据 发送者 过滤 指定 发送者    if ([queryRequest.sender containsString:@&quot;xxxxx&quot;]) {        return ILMessageFilterActionFilter;    }    // 2. 根据短息内容过滤特定 关键词    if ([queryRequest.messageBody containsString:@&quot;俱乐部&quot;] ||        [queryRequest.messageBody containsString:@&quot;澳门&quot;]) {        return ILMessageFilterActionFilter;    }    // 根据具体逻辑返回结果    // 1. 无法处理: ILMessageFilterActionNone (请求服务器处理)    // 2. 通过规则: ILMessageFilterActionAllow (判定为非垃圾短信)    return ILMessageFilterActionNone;}处理关联服务器响应结果/** 解析服务器返回的数据 @param networkResponse 服务器返回的数据 @return 过滤判断结果 */- (ILMessageFilterAction)actionForNetworkResponse:(ILNetworkResponse *)networkResponse {    // 解析服务器返回的数据, 返回过滤判断结果    // 解析数据代码    return ILMessageFilterActionAllow;}至此客户端的功能基本已经实现完成, 可以装上 App 实际测试一下了."
+  },
+  
+  {
+    "title": "iOS 超简单的 旋转/翻转/放大 UIImage 的方法",
+    "url": "/posts/iOS-%E8%B6%85%E7%AE%80%E5%8D%95%E7%9A%84-%E6%97%8B%E8%BD%AC-%E7%BF%BB%E8%BD%AC-%E6%94%BE%E5%A4%A7-UIImage-%E7%9A%84%E6%96%B9%E6%B3%95/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2019-07-27 19:48:33 +0800",
+    
+
+
+
+
+
+    "snippet": "关于图片的 翻转 和 旋转, 网上查到的资料, 几乎都是使用 CoreGraphics 在原有图片的基础上重新绘制一张经过变换的图片.图片的翻转说起图片的翻转, 如果为了达到如下所有效果, 算上原图, 就要进行 3 次 绘制.其实 iOS 已经提供了相关 API 来进行, 图片的 翻转 和 固定角度上的旋转.UIImage 有如下初始化方法:/** 创建并返回一个 UIImage 对象 @param cgImage     CGImage 对象 @param scale       缩放因子, 可以改变 image.size 属性 @param orientation 图象的方向 @return UIImage 对象 */+ (UIImage *)imageWithCGImage:(CGImageRef)cgImage                        scale:(CGFloat)scale                  orientation:(UIImageOrientation)orientation此处主要利用 orientation 参数来对 UIImage 对象设置图像数据的方向.UIImageView 展示 UIImage 时候, 总是使用 UIImageOrientationUp 的方向来进行渲染.如果设置 orientation 的值为 UIImageOrientationUpMirrored 在渲染的时候, 就会对 UIImage 的展示结果以 Y 轴为中心进行 翻转.可用的枚举有:UIImageOrientationUpMirrored,    // 原图保持不变UIImageOrientationDownMirrored,  // X 轴翻转UIImageOrientationLeftMirrored,  // Y 轴翻转UIImageOrientationRightMirrored, // Y 轴翻转图片的旋转图片的旋转就会限制在 90度 的倍数旋转范围内.UIImageOrientationUp,            // 原图保持不变UIImageOrientationDown,          // 旋转 180 度UIImageOrientationLeft,          // 旋转 90 度UIImageOrientationRight,         // 旋转 90 度CoreGraphics 绘图如果需要进行特殊角度的旋转, 最终还是需要通过 CoreGraphics 相关的绘图 API 来实现.图形的矩阵变换当然, 如果仅仅是屏幕上的渲染效果的话, 也可以用过 CALayer.transform 属性来进行变换.  图片旋转 45度    UIImageView.layer.transform = CATransform3DMakeRotation(M_PI / 2, 0.0, 0.0, 1.0);        在手机屏幕上做 2D 旋转时候, 在手机的 3D 空间中, 实际上是绕 Z 轴做旋转.因此此处 X, Y 传值为 0.0f, Z 传值为 1.0.    翻转图片    // X 轴翻转相当于绕 X 轴旋转 180 度, 效果同 UIImageOrientationDownMirroredUIImageView.layer.transform = CATransform3DMakeRotation(M_PI, 1.0, 0.0, 0.0);// Y 轴翻转相当于绕 Y 轴旋转 180 度, 效果同 UIImageOrientationUpMirroredUIImageView.layer.transform = CATransform3DMakeRotation(M_PI, 0.0, 1.0, 0.0);// 先 X 轴翻转, 在 Y 轴翻转, 想让与绕 Z 轴旋转 180 度.UIImageView.layer.transform = CATransform3DMakeRotation(M_PI, 0.0, 0.0, 1.0);// 或者UIImageView.layer.transform = CATransform3DConcat(CATransform3DMakeRotation(M_PI, 1.0, 0, 0), CATransform3DMakeRotation(M_PI, 0, 1, 0));        放大图片    // X, Y 轴同时方法 2 倍, 当然平面图, Z 轴放大也没任何意义.UIImageView.layer.transform = CATransform3DMakeScale(2.0, 2.0, 1.0)      "
+  },
+  
+  {
+    "title": "UISlider 实现调色器 (渐变背景)",
+    "url": "/posts/UISlider-%E5%AE%9E%E7%8E%B0%E8%B0%83%E8%89%B2%E5%99%A8-(%E6%B8%90%E5%8F%98%E8%83%8C%E6%99%AF)/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2019-07-26 16:19:00 +0800",
+    
+
+
+
+
+
+    "snippet": "最近有个需求, App 内需要一个 RGB 的 拾色器. 网上也没有找到好的轮子, 只好自己造一个了.轮子的大概效果是这样子的:UISlider 动态渐变背景UISlider 类本身仅仅为开发者提供了 4 个属性来设置其背景样式:// 滑块左面背景图片@property(nullable, nonatomic,strong) UIImage *minimumValueImage;// 滑块右面背景图片@property(nullable, nonatomic,strong) UIImage *maximumValueImage;// 滑块左面背景颜色@property(nullable, nonatomic,strong) UIColor *minimumTrackTintColor;// 滑块右面背景颜色@property(nullable, nonatomic,strong) UIColor *maximumTrackTintColor;以及若干方法, 但是效果跟上面 4 个属性效果差不多.实现动态的渐变背景只能通过 自定义 来完成了.系统有专门为做渐变而封装的 CAGradientLayer 类.此处就用 CAGradientLayer 来做 UISlider 的渐变背景.我们的自定义视图层级如下结构所示:UIView (父视图) |- CAGradientLayer (渐变背景) |- UISlider (滑动视图)创建一个 ZHKColorSlider 类, 为我们的动态渐变背景的 Slider 类.typedef void(^ColorSliderChangedBlock)(CGFloat value);@interface ZHKColorSlider : UIView// 当前 Slider 的值@property (nonatomic, assign) CGFloat value;    // Slider 值改变时候的回调@property (nonatomic, copy) ColorSliderChangedBlock changedBlock;  // 滑动视图@property (nonatomic, strong) UISlider *slider;// 背景渐变图层@property (nonatomic, strong) CAGradientLayer *backLayer;/** 设置背景由左向右的渐变颜色 @param startColor 开始颜色 (左侧) @param endColor   结束颜色 (右侧) */- (void)startColor:(UIColor *)startColor endColor:(UIColor *)endColor;@end注意点  设置 UISlider 的 minimumTrackTintColor 和 maximumTrackTintColor 为 clearColor. 防止影响我们自定义的渐变背景效果.  UISlider 的设置:    // 这样设置方便颜色的取值// 不一定非要这个设置, 只是为了方便取值和转换._slider.minimumValue = 0.0f;_slider.maximumValue = 255.0f;        backLayer 背景渐变图层的设置:    // 设置渐变的方向为从 左 向 右_backLayer.startPoint = CGPointMake(0, 0);_backLayer.endPoint   = CGPointMake(1, 0);_backLayer.locations  = @[@0.0, @1.0];      不贴过多的代码, 只写一下 原理 和 注意点. 下面会放 demo 地址.调色器调色器 为 3 个背景可以动态渐变的 Slider 组成. 且 3 个 Slider 之间有联动效果. 最终结合 3 个 Slider 的值生成我们的结果即可达成我们的目的.创建 ZHKSliderColorPicker 类, 作为 滑动视图 和 联动效果 的封装.@class ZHKSliderColorPicker;@protocol ColorSliderPickerDelegate &amp;lt;NSObject&amp;gt;- (void)picker:(ZHKSliderColorPicker *)picker color:(UIColor *)color;@end@interface ZHKSliderColorPicker : UIView// 当前拾色器的颜色@property (nonatomic, strong) UIColor *color;// R 滑动视图@property (nonatomic, strong) ZHKColorSlider *RSlider;// G 滑动视图@property (nonatomic, strong) ZHKColorSlider *GSlider;// B 滑动视图@property (nonatomic, strong) ZHKColorSlider *BSlider;// 即时回调代理@property (nonatomic, weak) id &amp;lt;ColorSliderPickerDelegate&amp;gt; delegate;@end属性 color 的 Setter 用于设置调色器 当前颜色 和 滑动视图的联动分布. Getter 用于获取当前的 调色结果.滑动视图的联动RSlider, GSlider, BSlider 任意一个值得变化, 都会造成另外 2 个 Slider 背景颜色的变化.因此此处在 Slider 的值发生改变的时候, 需要在其回调方法内调用其他 2 个 Slider 的方法:- (void)startColor:(UIColor *)startColor endColor:(UIColor *)endColor回调方法的联动逻辑以 RSlider 的回调为例:- (void)redAction:(CGFloat)value {    [_GSlider startColor:COLOR(_RSlider.value, 0, _BSlider.value, 1) endColor:COLOR(_RSlider.value, 255, _BSlider.value, 1)];    [_BSlider startColor:COLOR(_RSlider.value, _GSlider.value, 0, 1) endColor:COLOR(_RSlider.value, _GSlider.value, 255, 1)];}GSlider 和 BSlider 的回调方法与 RSlider 逻辑相同, 举一反三即可.其中 COLOR 宏如下:// 通过 RGB 创建颜色对象#define COLOR(R, G, B, A) [UIColor colorWithRed:R / 255.0 green:G / 255.0 blue:B / 255.0 alpha:A]如果需要即时获取当前调色器的颜色结果, 在联动方法的末尾 回调代理 即可.注意点:  Slider 的 value 范围是 0 ~ 255, 因此在数据处理的时候需要注意.  由外部给 color 属性赋值的时候, 不仅要改变 Slider 的 value, 还要改变其 渐变背景, 使其视觉效果和数值在逻辑上达到统一.Demo 地址地址: https://github.com/ZHK1024/ZHKColorPicker"
+  },
+  
+  {
+    "title": "iOS App 被判定为太简被拒绝上架",
+    "url": "/posts/iOS-App-%E8%A2%AB%E5%88%A4%E5%AE%9A%E4%B8%BA%E5%A4%AA%E7%AE%80%E8%A2%AB%E6%8B%92%E7%BB%9D%E4%B8%8A%E6%9E%B6/",
+    "categories": "AppStore",
+    "tags": "",
+    "date": "2019-07-25 16:04:01 +0800",
+    
+
+
+
+
+
+    "snippet": "苹果一直有一套他们自己的审核标准, 但是每个审核员的审核标准又各不相同, 每次提交审核不仅要拼人品, 还要看审核人员的心情. 因此我们总是遇到上次提交审核都还一切 OK, 这次就被完全没有修改过的内容给拒绝了.我一款 Mac App 已经维护升级了 5 个版本了, 在最近一个版本新增了一些功能提交审核的时候, 收到了如下这条被拒信息:  Design Preamble  We still found that your app does not include the minimum standards required for an app to be approved for the App Store.就是说我的 App 太简陋 了, 没有达到上架 AppStore 的最低标准.说起来也奇怪, 我这个 App 都已经更新了 5 个版本了, 要说简陋也应该是第一个版本被拒才对. 经历了 5 次版本迭代之后, 功能已经相对完善, 却才收到这样的被拒原因. 看来是运气不好, 还碰到了审核人员心情不好的时机吧.当时在网上我也查找了大量的帖子和博客, 但是大家的解决办法几乎都是:  增加新功能, 让他看起来不再那么简单.  放弃更新. 因为大部分被判定为 功能简陋 的 App 在后续版本审核过程中都不太顺利.所以这也是苹果在开发者眼中是一个独裁者的原因, 霸道且不讲道理. 只要被苹果贴上了 违规标签, 就算你改过自新, 也没法翻身(无论你是有意违规还是无意违规, 或者是被误判).因为我这个 App 当时已经更新了多个版本. 虽然不赚钱, 但是让我放弃更新还是有点小心痛的.解决过程我的 App 被判定为 简陋之后, 我在跟朋友聊天时候抱怨了一下这个事情, 他的想法是:  因为这个 App 专业性比较强, 从一个非专业者的角度来看的话, 仅仅 UI 方面确实是挺简单的, 甚至你的功能对于他们来讲完全不理解这 App 是做什么的. UI 方面没有过多的设计, 只是一个功能一个按钮. 但是真正对他有需求的用户来说, 能帮助他节省很多时间和精力.关于 UI 方面, 我的确没有专门的去设计, 大都是我自己写 App 过程中积累起来的经验来进行 UI 布局. 另外因为这个最初是我自己遇到的问题, 然后以此为需求写成了 App 并且发布了.加新功能的话, 暂时也没有其他什么计划. 放弃也不太甘心, 于是就尝试跟苹果审核人员进行沟通.以下是邮件原文:  你好,XXX App 的主要功能是为用户提供 XXX 服务. 为了更加方便用户的使用, 在设计相关功能的时候我们尽量减少了用户的操作, 并且简化了 UI. 这个 App 已经能够为用户提供 XXX, XXX, XXX, XXX, XXX, XXX 和 XXX 等多种服务. 虽然 UI 和 操作 看起来很简单(这也是当初设计时候的初衷), 那是因为已经有大量的工作已经由代码去帮助用户去完成和简化了. 它能够为用户节省大量的时间去自己 XXXXXX, 使用者仅需简单设置即可为他们节省大量的时间和重复的体力劳动. 甚至还有一部分用户并不具备自己 XXXX 的能力. 因此它目前已经是一个功能相对完整的产品了. 将来我们也会听取用户的建议和反馈来改进这款 App. 因此我们希望此 App 在这个问题能获得一次重新评估的机会.因为本人英语差, 都是 Google翻译, 就不放英文版的邮件内容了. 以上就是邮件的全部内容.在邮件发出去的第二天晚上, 我收到了苹果的回复信息. 新的信息是关于一些其他需要修改的问题(关键字和标题的问题). 在修改完成之后就成功通过了审核.至此问题就解决了.在这之前, 因为每次苹果回复的邮件都是格式化的, 因此给我的印象就是死板, 机械性, 不可沟通. 由此次事件, 让我对苹果审核有了新的认识. 最终决定是否给你通过的还是人, 你写的每一个字他们都是能够看到的. 至于审核的结果如何, 就看你表达的内容能否说服审核人员, 让他们接受你的观点并给你通过审核.如果你在审核中有什么问题或者疑惑, 你都可以大胆的通过邮件来询问审核人员, 他们肯定会给你答复. 尽管有些时候, 他们给的提示很有限. 但这也是解决我们问题的有限渠道中非常重要的一个."
+  },
+  
+  {
+    "title": "macOS AppStore 审核坑之一: 打开主窗口",
+    "url": "/posts/macOS-AppStore-%E5%AE%A1%E6%A0%B8%E5%9D%91%E4%B9%8B%E4%B8%80-%E6%89%93%E5%BC%80%E4%B8%BB%E7%AA%97%E5%8F%A3/",
+    "categories": "AppStore",
+    "tags": "",
+    "date": "2019-07-24 12:27:27 +0800",
+    
+
+
+
+
+
+    "snippet": "描述在我发布的第一款 macOS App 时候遇到过这样一个问题: 在用户关闭应用主窗口后, 没有为用户提供重新打开主窗口的方法.这个是一个不可忽略的问题, 否则你将会收到苹果的拒绝信息:  Design Preamble  The user interface of your app is not consistent with the macOS Human Interface Guidelines.  Specifically, we found that when the user closes the main application window there is no menu item to re-open it.  Next Steps  It would be appropriate for the app to implement a Window menu that lists the main window so it can be reopened, or provide similar functionality in another menu item. macOS Human Interface Guidelines state that “The menu bar always contains [a] Window menu”.如邮件中所讲, 你必须为用户提供 重新打开主窗口 的方法.解决方法方法一按照苹果的要求, 为用户提供 打开主窗口 的 按钮/菜单. 此处有多个注意点.1. 在 Dock 中点击 App 图标时候重新打开主窗口.在 AppDelegate.m 中添加如下代码:- (BOOL)applicationShouldHandleReopen:(NSApplication *)sender hasVisibleWindows:(BOOL)flag {    if ([NSApplication sharedApplication].windows.count &amp;gt; 0) {        [[NSApplication sharedApplication].windows.lastObject makeKeyAndOrderFront:[NSApplication sharedApplication]];    }    return YES;}2. 在工具栏中添加打开主窗口的菜单.通过 Storyboard 拉线, 在 AppDelegate.m 中新增方法, 与上图的菜单要关联起来:- (IBAction)reopenApplication:(id)sender {    if ([NSApplication sharedApplication].windows.count &amp;gt; 0) {        [[NSApplication sharedApplication].windows.lastObject makeKeyAndOrderFront:[NSApplication sharedApplication]];    }}至此即完成了 重新打开主窗口 的这个目标, 至此基本万无一失 (也可以参考一下其他应用在这个地方是如何处理的).方法二如果你的应用在用户关闭窗口后, 不需要继续保持 App 进程的存活, 可以直接 杀死 App 的进程, 也是一种解决方法.在 AppDelegate.m 中实现如下方法:- (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)sender {    return YES;}这样就会在第一次点击 x 按钮时候, 结束掉进程.结语以上两种做法都可以解决这个被拒的问题. 但是选择哪一种做法还要视你的 App 功能来定:  如果你的 App 提供的功能需要在后台持续工作, 就必须采取第一种方法来处理.  如果你的 App 每一个工作都依赖于用户的操作, 关闭窗口后就停止工作, 就可以直接结束进程. 比如 AppStore 就可以作为参考."
+  },
+  
+  {
+    "title": "iOS 数组常用操作: 筛选",
+    "url": "/posts/iOS-%E6%95%B0%E7%BB%84%E5%B8%B8%E7%94%A8%E6%93%8D%E4%BD%9C-%E7%AD%9B%E9%80%89/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2019-07-23 11:33:58 +0800",
+    
+
+
+
+
+
+    "snippet": "开发中经常会遇到从数组中进行筛选数据的情况. 筛选数据本身并不困难, 但是这里要讲的是如何使用更加简单的方法来进行筛选.正文假设情景假设我们有一批用户数据, 包含 姓名, 年龄, 身高, 体重 信息.首先创建一个 Person 类, 代码如下.@interface Person : NSObject@property (nonatomic, copy)   NSString *name;   // 姓名@property (nonatomic, assign) NSInteger age;    // 年龄@property (nonatomic, assign) CGFloat   height; // 身高@property (nonatomic, assign) CGFloat   weight; // 体重+ (instancetype)persionWithName:(NSString *)name                            age:(NSInteger)age                         height:(CGFloat)height                         weight:(CGFloat)weight;@end数据对象数组用户信息数据对象数组如下:NSArray *persons =@[[Person persionWithName:@&quot;张三&quot; age:16 height:178 weight:69],  [Person persionWithName:@&quot;李四&quot; age:28 height:173 weight:66],  [Person persionWithName:@&quot;王五&quot; age:21 height:159 weight:51],  [Person persionWithName:@&quot;赵六&quot; age:18 height:165 weight:56],  [Person persionWithName:@&quot;孙七&quot; age:21 height:185 weight:73],  [Person persionWithName:@&quot;张八&quot; age:35 height:173 weight:61],  [Person persionWithName:@&quot;张九&quot; age:19 height:165 weight:52],  ];需求假设需求(1):  从用户数据中筛选出姓 张 并且 身高 &amp;gt; 170cm 的人.一般最简单的做法遍历筛选NSMutableArray *result = [NSMutableArray new];for (Person *p in persons) {    // 1. 姓名以 `张` 为首    // 2. 身高 &amp;gt; 170 cm.    if ([p.name hasPrefix:@&quot;张&quot;] &amp;amp;&amp;amp; p.height &amp;gt; 170) {        [result addObject:p];    }}这样 循环遍历数组 的做法也能完成我们的需求, 却不是本文主张的做法.NSPredicate (谓词)NSPredicate (谓词) 是一个用于定义逻辑条件 的类, 主要用于 检索 或 筛选. 对于每个做 iOS 开发的人来讲都不陌生, 但是他的强大功能却经常会被忽略掉.同样的, 依旧  从用户数据中筛选出姓 张 并且 身高 &amp;gt; 170cm 的人.NSPredicate 从语法上来看, 跟 SQL 比较像.如果从数据库筛选, 我们的 SQL 可能会这样写:SELECT * FROM `Users` WHERE `name` like 张% AND `height` &amp;gt; 170;NSPredicate 会这样写:name like &#39;张*&#39; AND height &amp;gt; 180如果在本题中, 代码是这样的:NSPredicate *predicate =// 定义逻辑// 1. name 以 `张` 为首// 2. height &amp;gt; 170[NSPredicate predicateWithFormat:@&quot;name like &#39;张*&#39; AND height &amp;gt; 180&quot;];NSArray *result = [persons filteredArrayUsingPredicate:predicate];  此处 * 为通配符, 意为以 ‘张’ 为首, 结尾为 0 或 多个 字符.无论 张三 还是 张三丰 都能被匹配成功.筛选结果:(    &quot;张三: 16岁  178cm  69kg&quot;,    &quot;张八: 35岁  173cm  61kg&quot;)当然, 除了上面的筛选条件, 还有更多的玩法:  筛选出年龄介于 20 和 30 之间的用户:    [NSPredicate predicateWithFormat:@&quot;age &amp;gt; 20 AND age &amp;lt; 30&quot;];        筛选出姓 王 的用户:    // 可以使用 &#39;like&#39;[NSPredicate predicateWithFormat:@&quot;name like &#39;王*&#39;&quot;];// 也可以使用 &#39;BEGINSWITH&#39;[NSPredicate predicateWithFormat:@&quot;name BEGINSWITH &#39;王&#39;&quot;];        筛选出姓名中包含 三 的用户:    [NSPredicate predicateWithFormat:@&quot;name like &#39;*三*&#39;&quot;];              此处, 三 表示 三 前后都可以有 &amp;gt;=0 字符. 比如: 三, 三毛, 张三, 张三丰, 张三打太极拳, 祖师张三丰 都能够成功匹配.      还有一种写法: 三 表示 三 之前有 1 个字符, 后面有 &amp;gt;=0 个字符. 比如: 张三, 张三丰, 张三打太极拳, 但是无法匹配 祖师张三丰.      "
+  },
+  
+  {
+    "title": "iOS 打包上传卡在: Authenticating with the iTunes store",
+    "url": "/posts/iOS-%E6%89%93%E5%8C%85%E4%B8%8A%E4%BC%A0%E5%8D%A1%E5%9C%A8-Authenticating-with-the-iTunes-store/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2019-07-21 15:17:33 +0800",
+    
+
+
+
+
+
+    "snippet": "今天打包上传 App 时候一直卡在: Authenticating with the iTunes store, 等了 1 个小时还是卡在这. 然后取消重新开始上传问题也是依旧没有得到解决. 上周还好好的, 今天突然发生这样的问题.只好网上搜解决办法, 共找到以下几种解决办法:第一种: 更新 iTMSTransporter在控制台执行以下命令:改变当前目录:cd ~ 修改 .itmstransporter 文件夹名称为 .old_itmstransporter(可以这么理解, 实际上就是备份).mv .itmstransporter/ .old_itmstransporter/ 执行此命令之后, Transporter 就会更新自己.注意: 此处的 &quot; 不要省略, 不然会执行出错.&quot;/Applications/Xcode.app/Contents/Applications/Application Loader.app/Contents/itms/bin/iTMSTransporter&quot;更新完成后重新上传.此种方法来自: 原贴链接地址看不少人通过这种方法问题解决了, 我试过之后问题依旧.第二种: 重新登录 Application Loader  打开: Xcode -&amp;gt; Open Developer Tool -&amp;gt; Application Loader.  重新登录开发者账号.  同意相关的协议.  重新打包上传.这个方法我试了之后, 没有找到需要同意的协议什么的这些内容, 自然也是没有解决问题.第三种: 切换网络 (解决了我的问题)  检查 防火墙.  检查网络设置是否阻止了 相关服务.  检查 系统时间 是否错误.  可以尝试 切换网络连接 来尝试重新上传.前 3 条都检查了没有问题, 并且上周都还正常, 也没人会碰我这台 MAC, 相关配置肯定不会发生改变. 然后就用手机开热点, 尝试用 4G 上传, 最终在一个短暂的停顿之后, 开始了上传. 问题得到了解决.造成这种情况的原因可能是多样的, 因为以上 3 种解决办法, 都解决了部分人的问题, 因此把 3 种解决办法都罗列出来.如果你也遇到了这种问题, 可以进行一一尝试."
+  },
+  
+  {
+    "title": "iOS 如何在视图内获取父视图的视图控制器?",
+    "url": "/posts/iOS-%E5%A6%82%E4%BD%95%E5%9C%A8%E8%A7%86%E5%9B%BE%E5%86%85%E8%8E%B7%E5%8F%96%E7%88%B6%E8%A7%86%E5%9B%BE%E7%9A%84%E8%A7%86%E5%9B%BE%E6%8E%A7%E5%88%B6%E5%99%A8/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2019-07-20 13:04:46 +0800",
+    
+
+
+
+
+
+    "snippet": "关于 如何在视图内获取父视图的视图控制器 网上有很多类似主题的文章, 但是方法比较麻烦, 并且扩展性比较差. 于是自己总结一个易于扩展的方法.UIResponderUIResponder 主要职责是 iOS 中专门用来响应用户操作. 我们常用的 UI 相关的类有很大一部分都继承自它.NSObject    |- UIResponder            |- UIApplication                        |- UIView            |     |- UIWebView                      |     |- UIControl            |            |- UIButton           |            |- UIDatePicker           |            |- UIPageControl           |            |- UISegmentControl           |            |- UITextField           |            |- UISlider           |            |- UISwitch           |- UIViewController                      |- UISplitViewController                     |- UITabBarController                     |- UITableViewController                     |- UINavigationViewController                                 |- UIImagePickerViewController                                 |- UIVideoEditorController继承链上的每一个类都是我们非常熟悉的.关于 响应链 此处不做过多讲解, 后面另开新坑详细说.UIResponder  有这样一个属性:// Returns the next responder in the responder chain, or nil if there is no next responder.// 返回当前对象在响应链中的下一响应对象@property(nonatomic, readonly, nullable) UIResponder *nextResponder;在 UI 层级中我们的 UI 层级之间究竟有什么样的关系? 首先创建如下 UI 作为测试工程:UI 层级关系是:UITabBarController(Root)   |- UINavigationController      |- UIViewController         |- UIViewController.view            |- CustomView我们可以通过下面一段代码来验证(CustomView):@implementation CustomView- (void)didMoveToWindow {    UIResponder *responder = self;    while (responder != nil) {        NSLog(@&quot;%@&quot;, [responder class]);        responder = [responder nextResponder];    }}@end打印结果:CustomViewUIViewViewControllerUIViewControllerWrapperViewUINavigationTransitionViewUILayoutContainerViewUINavigationControllerUIViewControllerWrapperViewUITransitionViewUILayoutContainerViewUITabBarControllerUIWindowUIApplicationAppDelegate以上就是图片中 UI 层级中 响应链 中的对象由上往下类的列表.获取响应链层级中的 UIViewController回归正题, 本文主要通过响应链来获取 UI 层级中某层对象.就如 CustomView  中实现的代码部分一样我们可以通过循环遍历 [responder nextResponder] 来获取某一层级中的对象. 但是这种方法泛用性太差, 我们来找一个泛用性更高的方法.正如上文所述, 我们常用的 UI 控件/对象 一大部分都继承自 UIResponder, 并且 nextResponder 属性也继承自 UIResponder, 我们就通过给 UIResponder   添加 Category 的方法来实现我们的目的.创建 Category获取 CustomView 父视图的视图控制器:@implementation UIResponder (Category)- (UIViewController *)nextViewController {    if ([self isKindOfClass:[UIViewController class]]) {        return (UIViewController *)self;    }    return [[self nextResponder] nextViewController];}@end这样就达成了我们标题的目的, 但是泛用性方面太差.我们对方法进行修改:/** 获取响应链中指定类的实例对象 @param class 筛选类 @return 实例对象 */- (UIResponder *)nextResponder:(Class)class {    if ([self isKindOfClass:class]) {        return self;    }    return [self nextResponder:class];}当然, 这个方法也有其缺陷, 比如: 如果我们的 响应链 层级中有 n 个 CustomViewController 的实例对象, 我们就只能获取到最高层的那个, 而无法获取更加底层的实例对象.当然, 你也可以通过 做标记 等多种方法来实现, 自由度非常高, 完全由你自己把控."
+  },
+  
+  {
+    "title": "iOS 数组常用操作: 排序",
+    "url": "/posts/iOS-%E6%95%B0%E7%BB%84%E5%B8%B8%E7%94%A8%E6%93%8D%E4%BD%9C-%E6%8E%92%E5%BA%8F/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2019-07-19 17:59:11 +0800",
+    
+
+
+
+
+
+    "snippet": "简单数组排序数字, 字符串 数组的排序相对来说非常简单.直接使用 API 对如下数组排序:NSArray *nums = @[@7, @2, @8, @3, @9, @6, @5];升序排序:[nums sortUsingComparator:^NSComparisonResult(NSNumber *obj1, NSNumber *obj2) {    // 默认升序排序, 降序排序只需颠倒 compare: 方法返回的 NSComparisonResult 枚举即可    return [obj1 compare:obj2];}];输出结果:(2, 3, 5, 6, 7, 8, 9)复杂对象数组的排序以对 Person 实例对象数组排序为例:// Person 类头文件@interface Person : NSObject@property (nonatomic, copy)   NSString *name;   // 姓名@property (nonatomic, assign) NSInteger age;    // 年龄@property (nonatomic, assign) CGFloat   height; // 身高@property (nonatomic, assign) CGFloat   weight; // 体重@end// 实现部分@implementation Person// 重写 description 方法方便查看输出内从- (NSString *)description {    return [NSString stringWithFormat:@&quot;%@: %ld岁  %.0fcm  %.0fkg&quot;, _name, _age, _height, _weight];;}@end现在要对以下数组进行排序:NSArray *persons = @[[Person persionWithName:@&quot;张三&quot; age:16 height:178 weight:69],  [Person persionWithName:@&quot;李四&quot; age:28 height:173 weight:66],  [Person persionWithName:@&quot;王五&quot; age:21 height:185 weight:73],  [Person persionWithName:@&quot;赵六&quot; age:21 height:159 weight:51],  [Person persionWithName:@&quot;孙七&quot; age:18 height:165 weight:56],];目标:  根据年龄升序进行数组排序.  根据年龄降序, 同龄的再根据身高降序排序.  …一般做法:1. 根据年龄升序进行数组排序.[persons sortedArrayUsingComparator:^NSComparisonResult(Person *obj1, Person *obj2) {    // 此处使用 &#39;&amp;gt;&#39; 和 &#39;&amp;lt;&#39; 决定了升序还是降序      return obj1.age &amp;gt; obj2.age;}];输出结果:(    &quot;张三: 16岁  178cm  69kg&quot;,    &quot;赵六: 18岁  165cm  56kg&quot;,    &quot;王五: 21岁  159cm  51kg&quot;,    &quot;孙七: 21岁  185cm  73kg&quot;,    &quot;李四: 28岁  173cm  66kg&quot;)2. 根据年龄降序, 同龄的再根据身高降序排序.[persons sortedArrayUsingComparator:^NSComparisonResult(Person *obj1, Person *obj2) {    // 如果年龄相同, 直接对比 &#39;身高&#39; 即可    if (obj1.age == obj2.age) {        return obj1.height &amp;lt; obj2.height;    }    return obj1.age &amp;gt; obj2.age;}];排序结果:(    &quot;张三: 16岁  178cm  69kg&quot;,    &quot;赵六: 18岁  165cm  56kg&quot;,    &quot;孙七: 21岁  185cm  73kg&quot;,    &quot;王五: 21岁  159cm  51kg&quot;,    &quot;李四: 28岁  173cm  66kg&quot;)使用 NSSortDescriptor 进行排序NSSortDescriptor 是苹果提供的一个排序规则描述类. 我们可以通过他对数组内对象的某一个属性定义排序规则.NSArray 的 sortedArrayUsingDescriptors: 方法传入的是一个 数组, 说明此处可以直接对数添加多个排序规则.1. 根据年龄升序进行数组排序.省略, 直接看排序 2.2. 根据年龄降序, 同龄的再根据身高降序排序.// 定义 age 属性排序规则NSSortDescriptor *ageDesc = [[NSSortDescriptor alloc] initWithKey:@&quot;age&quot; ascending:YES];// 定义 height 属性排序规则NSSortDescriptor *hegDesc = [[NSSortDescriptor alloc] initWithKey:@&quot;height&quot; ascending:NO];// 通过排序规则对属性进行排序, NSSortDescriptor 对象在数组的顺序就是排序的优先级顺序[persons sortedArrayUsingDescriptors:@[ageDesc, hegDesc]];排序结果:(    &quot;张三: 16岁  178cm  69kg&quot;,    &quot;赵六: 18岁  165cm  56kg&quot;,    &quot;孙七: 21岁  185cm  73kg&quot;,    &quot;王五: 21岁  159cm  51kg&quot;,    &quot;李四: 28岁  173cm  66kg&quot;)"
+  },
+  
+  {
+    "title": "iOS大文件读取内存问题",
+    "url": "/posts/iOS%E5%A4%A7%E6%96%87%E4%BB%B6%E8%AF%BB%E5%8F%96%E5%86%85%E5%AD%98%E9%97%AE%E9%A2%98/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2019-07-18 17:37:01 +0800",
+    
+
+
+
+
+
+    "snippet": "一般小文件加载我们会直接用API 加载完整的文件来进行处理:NSData *data = [NSData dataWithContentsOfFile:@&quot;...&quot;]但是遇到比较大的文件, 比如 100MB 甚至是 1GB 的文件, 还使用这种方法来加载, 内存肯定要爆炸…一开始想到的方法是: 在 iOS 下能否有办法每次仅仅加载文件的某一段数据来进行处理. 就像 HTTP 请求头部的 Range 字段一样, 来获取文件数据的一部分.  但是实际上 iOS 有提供更好的解决办法查阅文档后发现 NSData 提供有 2 个这样的方法:+ (instancetype)dataWithContentsOfFile:(NSString *)path options:(NSDataReadingOptions)readOptionsMask error:(NSError **)errorPtr;+ (instancetype)dataWithContentsOfURL:(NSURL *)url options:(NSDataReadingOptions)readOptionsMask error:(NSError **)errorPtr;此处最关键的是 readOptionsMask 这个参数.NSDataReadingOptions 类型包含 6 个枚举:  NSDataReadingMappedIfSafe 如果当前可行的话, 使用 文件映射 读取文件. 这样系统会把文件映射进进程的地址空间, 而无需读取整个文件, 解决内存的问题.  NSDataReadingUncached 无需在文件系统进行缓存. 对于一次性读取和丢弃的数据, 此选项可以提高性能.  NSDataReadingMappedAlways 可能的情况下映射文件. 如果两者都设定，则优先使用 NSDataReadingMappedIfSafe.  NSDataReadingMapped = NSDataReadingMappedIfSafe  NSMappedRead = NSDataReadingMapped  NSUncachedRead = NSDataReadingUncached对比试验:用 完整读取 和 文件映射 读取的内存情况: 完整读取内存直接爆炸, 而文件映射读取内存方面并未观察出明显变化. 说明内存的问题的确完美的解决的."
+  },
+  
+  {
+    "title": "iOS 如何优雅的获取 URL 中的参数",
+    "url": "/posts/iOS-%E5%A6%82%E4%BD%95%E4%BC%98%E9%9B%85%E7%9A%84%E8%8E%B7%E5%8F%96-URL-%E4%B8%AD%E7%9A%84%E5%8F%82%E6%95%B0/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2019-07-17 18:16:59 +0800",
+    
+
+
+
+
+
+    "snippet": "如果给你一个 URL, 你会如何提取 URL 中所附带的参数?一般做法一般来说, 大多数人可能会使用这种方法, 逐层分解获取想要的结果.NSString *URL = @&quot;https://www.zhk1024.com?p=1&amp;amp;t=1563368296&amp;amp;token=94a08da1fecbb6e8b46990538c7b50b2&quot;;NSString *query = [URL componentsSeparatedByString:@&quot;?&quot;].lastObject;NSArray *params = [query componentsSeparatedByString:@&quot;&amp;amp;&quot;];NSMutableDictionary *kvs = [NSMutableDictionary new];for (NSString *param in params) {    NSArray *sup = [param componentsSeparatedByString:@&quot;=&quot;];    [kvs setValue:sup.lastObject forKey:sup.firstObject];}优雅的做法第一种做法也没错, 但是却略为繁琐, 并且分割过成功还要做多层判断来保证代码的健壮性.幸好 iOS 为我们提供了一个专门处理 URL 的一个类 NSURLComponents.使用 NSURLComponents  来获取参数.OC代码NSString *URL = @&quot;https://www.zhk1024.com?p=1&amp;amp;t=1563368296&amp;amp;token=94a08da1fecbb6e8b46990538c7b50b2&quot;;NSURLComponents *components = [[NSURLComponents alloc] initWithString:URL];NSMutableDictionary *kvs = [NSMutableDictionary new];for (NSURLQueryItem *item in components.queryItems) {    [kvs setValue:item.value forKey:item.name];}Swift 代码let URL = &quot;https://www.zhk1024.com?p=1&amp;amp;t=1563368296&amp;amp;token=94a08da1fecbb6e8b46990538c7b50b2&quot;let components = URLComponents(string: URL)var kvs : [String: Any] = [:];components?.queryItems?.forEach({ (item) in    kvs[item.name] = item.value})输出结果为:{    p = 1;    t = 1563368296;    token = 94a08da1fecbb6e8b46990538c7b50b2;}"
+  },
+  
+  {
+    "title": "SQLite 文件类型判断",
+    "url": "/posts/SQLite-%E6%96%87%E4%BB%B6%E7%B1%BB%E5%9E%8B%E5%88%A4%E6%96%AD/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2019-06-22 12:30:16 +0800",
+    
+
+
+
+
+
+    "snippet": "开发需求总是千奇百怪, 最近有个需求:  检测用户选择的文件是否是标准的 SQLite 数据库文件.毕竟总有一部分用户会认为把文件扩展名改成 .PNG 就是图片, 改成 .DB 就是数据库. 然后过来讲程序有 BUG.毕竟当年我也干过把网吧游戏快捷方式拷贝回家的经历, 也不能怪用户. 能用代码避免的问题就应该避免.有 2 种检测方法第一种: 通过执行 SQL 来判断.pragma schema_version;如果是非标准的 SQLite 数据库文件, 你会得到报错信息. 这种比较被动, 个人不太喜欢(一般执行 SQL 还要搞个异步, 麻烦).第二种:  通过文件头判断.有很多种文件都是以文件类型的字符串作为头部开始的, SQLite 文件也不例外.标准的 SQLite 3 数据库文件是以 SQLite format 3 字符串开头的.因此判断文件开头是否是指定的字符串即可 (个人习惯用包含来判断).放上代码:/** 判断指定路径的文件是否是标准的 SQLite 3 数据库文件 @param path 文件路径 @return 判断结果 */- (BOOL)isSQLiteFileFormat:(NSString *)path {    NSData *data = [NSData dataWithContentsOfFile:path];    if (data.length &amp;gt;= 16) {        NSData *headData = [data subdataWithRange:NSMakeRange(0, 16)];        NSString *string = [[NSString alloc] initWithData:headData encoding:NSASCIIStringEncoding];        return [string containsString:@&quot;SQLite format 3&quot;];    }    return NO;}另外还有一个情况, 如果 SQLite 文件是经过加密的, 那就只能通过尝试打开数据库文件来判断了. 没有更好的判断方法."
+  },
+  
+  {
+    "title": "Xcode10 &amp; Cocoapods - error: Multiple commands produce",
+    "url": "/posts/Xcode10-&-Cocoapods-error-Multiple-commands-produce/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2019-05-22 17:55:28 +0800",
+    
+
+
+
+
+
+    "snippet": "全部的错误信息如下(省略部分路径):error: Multiple commands produce&#39;/Users/xxx/Library/Developer/Xcode/DerivedData/.../iphoneos/SDWebImageBPGCoder.framework&#39;:1) Target &#39;SDWebImageBPGCoder&#39; has create directory command with output &#39;/Users/.../iphoneos/SDWebImageBPGCoder.framework&#39;2) Target &#39;SDWebImageBPGCoder.default-bpgenc&#39; has create directory command with output &#39;/Users/.../iphoneos/SDWebImageBPGCoder.framework&#39;大致原因就是 2 个 framework 要写入到同一个文件, 就报出了这个错误.解决过程SDWebImageBPGCoder.framework 是我需要的, 但是 SDWebImageBPGCoder.default-bpgenc 却并不知道是什么东西, 于是看一下 Pod 的 target 下. 发现如图情况:因为以前遇到过类似的情况, 当时 2 个 framework 是因为未配置 iOS 版本 的问题导致的.看看 Podfile 的配置情况pod &#39;SDWebImageBPGCoder&#39;, &#39;~&amp;gt; 0.6.0&#39;pod &#39;SDWebImageBPGCoder/bpgenc&#39;, &#39;~&amp;gt; 0.6.0&#39;emmmm… 是这里配置的问题吗?看了下 .podspec 的配置, 既然子模块是依赖于主模块的, 去掉这行好了.pod &#39;SDWebImageBPGCoder&#39;, &#39;~&amp;gt; 0.6.0&#39;然后 pod install 再看只剩下 SDWebImageBPGCoder.Command + B…Build Succeeded!以前的确是没有注意过还有这样的问题存在, 也是在 Xcode 10 之后才开始出现各种原因导致 Multiple commands produce 这样的编译错误.一般此类错误可以通过 File-&amp;gt;Workspace Settings...-&amp;gt;Build System 修改为 Legacy Build System 来解决. 如图:但是这算是逃避的一种做法, 还得找到真正的原因才能从根本上解决掉问题."
+  },
+  
+  {
+    "title": "Realm: Object has been deleted or invalidated when delete object",
+    "url": "/posts/Realm-Object-has-been-deleted-or-invalidated-when-delete-object/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2019-03-29 23:30:36 +0800",
+    
+
+
+
+
+
+    "snippet": "最近几个项目都用的 Realm 数据库, 虽然用起来特别方便但是坑也是特别多.最近一个项目遇到一个情况, 在删除对象之后就会导致程序崩溃: Object has been deleted or invalidated when delete object.Google 找到的方法都试了一遍也不行, 不知道是不是这个版本的 BUG. 项目紧急暂时未找出原因. 最后找到了一个曲线救国的方法.问题代码注册通知, 在 RLMResults 的内容发生变化的时候刷新数据.// 注册通知, 刷新数据__weak typeof(self) ws = self;self.dataToken = [_serviceGroups addNotificationBlock:^(RLMResults&amp;lt;ServiceGroupModel *&amp;gt; * _Nullable results, RLMCollectionChange * _Nullable change, NSError * _Nullable error) {    ws.serviceGroups = results;    [ws.outlineView reloadData];}];删除对象部分的代码:// 删除对象RLMRealm *realm = [RLMRealm defaultRealm];[realm transactionWithBlock:^{    [realm deleteObject:obj];}];这样会直接造成 Crash. 原因就是对象原本已经被删除无效了, 但是什么地方的代码逻辑还是尝试对该对象进行操作. 然后被 Realm 的机制终止掉了.虽然已经确保没有任何对对象的引用, 但是问题无法得到解决.各种调试之后可以确认此时在我的代码部分已经完全没有对该对象的引用了.曲线救国给每个对象添加一个 isDelete 的 BOOL 属性来对对象做 标记删除 使用.// 查询部分要添加条件, 筛选掉被标记删除的对象self.serviceGroups = [ServiceGroupModel objectsWhere:@&quot;isDelete = false&quot;];我把删除操作分为二步:  先对数据进行标记删除, 清除所有逻辑对被删除对象的引用.  再真正的从数据库删除对象.// 先把对象改为标记删除RLMRealm *realm = [RLMRealm defaultRealm];[[RLMRealm defaultRealm] transactionWithBlock:^{    obj.isDelete = YES;}];// 再做真正的删除[realm transactionWithBlock:^{    [realm deleteObjects:[ServiceGroupModel objectsWhere:@&quot;isDelete = true&quot;]];}];这样暂时是把问题解决了. 但是却并不完美.以后找到了原因再来补充."
+  },
+  
+  {
+    "title": "Cocoapods 在 pod install 之后出现多个 framework",
+    "url": "/posts/Cocoapods-%E5%9C%A8-pod-install-%E4%B9%8B%E5%90%8E%E5%87%BA%E7%8E%B0%E5%A4%9A%E4%B8%AA-framework/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2019-02-21 18:50:22 +0800",
+    
+
+
+
+
+
+    "snippet": "如图, pod install 之后出现出现 2 个 FMDB 的 framework.然后在 xcode10 上 archive 的时候就会报错: Error: Multiple commands produce....一直以来都用 pod init 来创建 Podfile, 也未遇到过什么问题.Podfile 内容如下:# Uncomment the next line to define a global platform for your project# platform :ios, &#39;9.0&#39;target &#39;TARGET&#39; do  # Uncomment the next line if you&#39;re using Swift or would like to use dynamic frameworks  # use_frameworks!  # Pods for TARGETend记得把 platform :ios, &#39;9.0&#39; 注释去掉, 让他生效. 不然就有可能会遇到上面的问题.暂未深究原因, 有些猜想, 待后续验证."
+  },
+  
+  {
+    "title": "MonkeyDev 安装",
+    "url": "/posts/MonkeyDev-%E5%AE%89%E8%A3%85/",
+    "categories": "开发总结, iOS逆向",
+    "tags": "",
+    "date": "2018-12-01 12:01:29 +0800",
+    
+
+
+
+
+
+    "snippet": "MonkeyDev 是原有 iOSOpenDev 的升级, 是一款非越狱插件开发集成神器！  先把仓库克隆下来. 下载地址  解压后, 如图:使用终端执行以下命令    // 目录如下图所示, 不要搞错路径$ MonkeyDev/bin/// 不要少了 `./`  不然不识别命令$ sudo ./md-install                待安装完成后, 打开 Xcode, 在创建工程面板中即可看到 MonkeyDev 的创建工程的模板.    如果需要安装 Theos 的话, 地址在这里 Theos安装教程"
+  },
+  
+  {
+    "title": "Pod 私有库踩坑记录",
+    "url": "/posts/Pod-%E7%A7%81%E6%9C%89%E5%BA%93%E8%B8%A9%E5%9D%91%E8%AE%B0%E5%BD%95/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2018-09-05 14:32:46 +0800",
+    
+
+
+
+
+
+    "snippet": "1. 引入第三方静态库 (Framework)比如 frameworks 放在 WTBAuth/Vender 下面的某个文件夹里面.在 podspec 中这么写:s.vendored_frameworks = &#39;WTBAuth/Vender/*/*.framework&#39;2. 依赖系统库例如 libstd++.tbd省略 lib 和 .tbd 后缀, 可以这么写:s.libraries = &#39;stdc++&#39;3. 依赖自己的私有库如果个人私有库没有在 Cocoapods 发布, 直接 s.dependency &#39;DKNetwork&#39;, 在 pod install 时候肯定会报错.解决办法:在 Podfile 里面也加入私有的 pod 相关配置:pod &#39;DKNetwork&#39;, :git =&amp;gt; &#39;https://host.com/username/DKNetwork.git&#39;并且同时在 podspec 中添加依赖:s.dependency &#39;DKNetwork&#39;即可解决.  [!] The &#39;&#39; target has transitive dependencies that include static binaries: ......4. 依赖中包含静态库比如需要用友盟分享(包含几个framework), 并且 Podfile 里面有 use_framework!, 会报错:target has transitive dependencies that include static binaries简单点的解决办法: 自己封装一下, 搞成一个 framework, 使用 1 中的办法引入进去.5. 工程的配置配置 Other Linker Flags :s.pod_target_xcconfig = { &#39;OTHER_LDFLAGS&#39; =&amp;gt; [&#39;-ObjC&#39; , &#39;-lstdc++&#39;]  , &#39;ENABLE_BITCODE&#39; =&amp;gt; &#39;NO&#39;}配置 bitcode :// 配置当前库的 bitcodes.pod_target_xcconfig  = { &#39;ENABLE_BITCODE&#39; =&amp;gt; &#39;NO&#39; }// 配置宿主工程的 bitcodes.user_target_xcconfig = { &#39;ENABLE_BITCODE&#39; =&amp;gt; &#39;NO&#39; }"
+  },
+  
+  {
+    "title": "NSImage 生成 PNG 格式图片",
+    "url": "/posts/NSImage-%E7%94%9F%E6%88%90-PNG-%E6%A0%BC%E5%BC%8F%E5%9B%BE%E7%89%87/",
+    "categories": "开发总结, macOS",
+    "tags": "",
+    "date": "2018-07-27 23:07:56 +0800",
+    
+
+
+
+
+
+    "snippet": "macOS在 macOS 的工程里, 使用代码把 NSImage 转换成 PNG, 跟 iOS 上面不太一样.macOS 下主要使用 AppKit 下的 NSBitmapImageRep 来进行转换, 代码如下:NSImage *image = [[NSImage alloc] initWithContentsOfFile:@&quot;filePath&quot;];CGImageSourceRef source = CGImageSourceCreateWithData((CFDataRef)data, NULL);CGImageRef cgimage = CGImageSourceCreateImageAtIndex(source, 0, NULL);NSBitmapImageRep *rep = [[NSBitmapImageRep alloc] initWithCGImage:cgimage];// rep.size = CGSizeMake(width, width);NSData *pngData = [rep representationUsingType:NSBitmapImageFileTypePNG properties:@{}];// pngData 写入磁盘 or 其他处理支持的文件类型如下:typedef NS_ENUM(NSUInteger, NSBitmapImageFileType) {    NSBitmapImageFileTypeTIFF,    NSBitmapImageFileTypeBMP,    NSBitmapImageFileTypeGIF,    NSBitmapImageFileTypeJPEG,    NSBitmapImageFileTypePNG,    NSBitmapImageFileTypeJPEG2000};缩放 NSImage:NSImage *image = ...// 缩放 imageNSImage *smallImage = [[NSImage alloc] initWithSize: CGSizeMake(width, width)];[smallImage lockFocus];[image setSize: CGSizeMake(width, width)];[[NSGraphicsContext currentContext] setImageInterpolation:NSImageInterpolationHigh];[image drawAtPoint:NSZeroPoint fromRect:CGRectMake(0, 0, width, width) operation:NSCompositingOperationCopy fraction:1.0];    [smallImage unlockFocus];iOS在 iOS 中, 主要是使用 UIKit 下的 UIImagePNGRepresentation() 方法, 直接就转换了, 比 macOS 下会简单不少.UIImage *image = [UIImage imageNamed:@&quot;name&quot;];NSData *pngData = UIImagePNGRepresentation(image);不过, 我们最常见的就是这2个方法:// return image as PNG. May return nil if image has no CGImageRef or invalid bitmap formatNSData * __nullable UIImagePNGRepresentation(UIImage * __nonnull image);                               // return image as JPEG. May return nil if image has no CGImageRef or invalid bitmap format. compression is 0(most)..1(least)NSData * __nullable UIImageJPEGRepresentation(UIImage * __nonnull image, CGFloat compressionQuality);  "
+  },
+  
+  {
+    "title": "ld: library not found for -lswiftContacts",
+    "url": "/posts/library-not-found-for-lswiftContacts/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2018-07-21 14:32:46 +0800",
+    
+
+
+
+
+
+    "snippet": "今天一个 OC  的 demo 工程 pod 里面包含了一个 swift 第三方,  然后 build 时候遇到下面的错误:ld: library not found for -lswiftSwiftOnoneSupport for architecture x86_64一般看到指令集问题, 第一反应就是换真机试试.不过有点不可思议, pod 的都是源码, 第一次遇到这样的错误.好吧, 那换真机试试??  然后,ld: library not found for -lswiftContacts for architecture arm64…Baidu 无果只好 Google, 然后找到了下面这句话.  You need to add at least one Swift file to the target you are trying to build!So just add a Swift file to the project which wants to use your Swift framework and it works原文地址大概意思就是, 在你 build 的工程里面要至少需要包含一个 swift 文件.难道只有 target 下面有 swift 文件时候, build target 时候, 才会引入 swift 相关的支持库?好吧, 创建了一个 swift 文件到 target 下面之后, 问题果然解决了."
+  },
+  
+  {
+    "title": "自己做个命令行工具",
+    "url": "/posts/%E8%87%AA%E5%B7%B1%E5%81%9A%E4%B8%AA%E5%91%BD%E4%BB%A4%E8%A1%8C%E5%B7%A5%E5%85%B7/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2018-07-19 22:14:26 +0800",
+    
+
+
+
+
+
+    "snippet": "开发中一直在使用 cocoapods , git, class-dump, cycript 等强大的命令行工具. 今天就来自己尝试做一个简单了解一下这些工具的工作原理.开始前先讲个故事:  UI : iOS 的 icon 都需要那些尺寸 ◔ ‸◔？? 我 :  给我一张 1024 的就好 (-_-#). (思路被打断正不爽).于是后来每次我都只能拿到一张 1024 * 1024 的 icon, 不得不每次都自己用 预览 来导出各种尺寸的 icon. 毕竟自作自受  (&quot;▔□▔)/ , 那今天就写个生成各种尺寸 icon 的工具吧.0x00 如何开始      首先使用 Xcode 创建一个 Command Line 工程. 没错, 就是那种只有一个 .m 文件, run 了之后只会 printf 和 NSLog 的那种工程, 我的项目名称就叫 appicon, 后面会提到.    导入头文件 #import &amp;lt;Cocoa/Cocoa.h&amp;gt;, 因为是基于 macOS 的, 所以导入这个. 不然 NSFileManager  都用不了, 大概…  先上代码, 下面再解释.int main(int argc, const char * argv[]) {    @autoreleasepool {        NSString *input = nil;        NSString *output = nil;                int ch;        // 读取参数        while ((ch = getopt(argc, argv, &quot;i:o:&quot;)) != -1) {            switch (ch) {                case &#39;o&#39;:                    output = [NSString stringWithUTF8String:optarg];                    break;                case &#39;i&#39;:                    input = [NSString stringWithUTF8String:optarg];                    break;            }        }                BOOL isDir = NO;        // 判断文件路径, 以及输出目标路径        if (input &amp;amp;&amp;amp; output &amp;amp;&amp;amp; [[NSFileManager defaultManager] fileExistsAtPath:output isDirectory:&amp;amp;isDir]) {            NSImage *image = [[NSImage alloc] initWithContentsOfFile:input];            if (image == nil) {                printf(&quot;File Load Failed At %s&quot;, input.UTF8String);                exit(0);            }            if (!isDir) {                output = [output stringByAppendingPathComponent:@&quot;icons&quot;];            }            writeImage(image, output, 180);            writeImage(image, output, 120);            writeImage(image, output, 80);            writeImage(image, output, 60);            writeImage(image, output, 40);        } else {            printf(&quot;Path Error!\\n&quot;);        }    }    return 0;}也没多少代码, 看起来也没多难, 应该都能看懂, 除了这段:int ch;while ((ch = getopt(argc, argv, &quot;i:o:&quot;)) != -1) {switch (ch) {    case &#39;o&#39;:        output = [NSString stringWithUTF8String:optarg];        break;    case &#39;i&#39;:        input = [NSString stringWithUTF8String:optarg];        break;    }}首先要注意一个函数 getopt, 这个就是获取命令行输入参数的关键.// 函数返回 -1 表示参数解析完毕int getopt(int argc, char * const argv[], const char *optstring);看函数声明有没有熟悉的东西? 我们的main 函数 int main(int argc, const char * argv[]) 里面有一模一样的 2 个参数.  argc：main() 函数传递过来的参数的个数argv：main() 函数传递过来的参数的字符串指针数组optstring：选项字符串，告知 getopt() 可以处理哪个选项以及哪个选项需要参数argc 和 argv 直接放进去就可以了, optstring 此处传入的是 &quot;i:o:&quot;.char* optstring = &quot;ab:c::&quot;;| 字符               | 意义                      | 格式                                || —————— | ————————- | ———————————– || 单个字符 a         | 表示选项a没有参数         | 格式：-a 即可，不加参数             || 单字符加冒号 b:    | 表示选项b有且必须加参数   | 格式：-b 100 或 -b100 ,但 -b=100 错 || 单字符加2冒号 c: : | 表示选项c可以有，也可以无 | 格式：-c200，其它格式错误           |因此此处的 &quot;i:o:&quot;, 表示有 2 个参数 -i 和 -o, 分别代表 input 和 output, 可以看成是参数名.使用一个while 循环来获取所有的参数, 此处的 optarg 就是获取后的参数值.以下写过 iOS 的稍微转换一下就可以了.都是常见的功能.压缩图片尺寸:/** 压缩图片到指定尺寸 @param image 图片对象 @param width 目标尺寸 @return 压缩结果 */NSData * compressImage(NSImage *image, float width) {    NSData *data = image.TIFFRepresentation;    if (data == nil) {        return nil;    }    CGImageSourceRef source = CGImageSourceCreateWithData((CFDataRef)data, NULL);    CGImageRef cgimage = CGImageSourceCreateImageAtIndex(source, 0, NULL);        NSBitmapImageRep *rep = [[NSBitmapImageRep alloc] initWithCGImage:cgimage];    rep.size = CGSizeMake(width, width);    NSData *pngData = [rep representationUsingType:NSBitmapImageFileTypePNG properties:@{}];    return pngData;}把 image 写入指定的位置./** 处理图片并把结果写入磁盘 @param image 被处理的图片对象 @param path  写入路径 @param size  目标图片尺寸 */void writeImage(NSImage *image, NSString *path, float size) {    path = [path stringByAppendingPathComponent:[NSString stringWithFormat:@&quot;%.0f.png&quot;, size]];    [compressImage(image, size) writeToFile:path atomically:NO];}0x01 如何使用  项目编译之后会生成一个 appicon , Product 文件夹下的 Mach-O 文件.  复制 appicon 到 usr/local/bin, 放在此目录下, 在任何文件夹下都能够找到命令, 不然还要指定路径.  使用命令:$ appicon -i [输入文件路径] -o [输出目录路径]例如:$ appicon -i ~/Desktop/1024.png -o ~/Desktop或者$ cd ~/Desktop/$ appicon -i ./1024.png -o ./而上文中 input 和 output 分别就对应 ~/Desktop/1024.png 和 ~/Desktop.Github 源码地址"
+  },
+  
+  {
+    "title": "审核被拒 (Your app uses or references the following non-public APIs:)",
+    "url": "/posts/2018-06-13-Your-app-uses-or-references-the-following-non-public-APIs/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2018-06-13 13:56:01 +0800",
+    
+
+
+
+
+
+    "snippet": "应用审核被拒的经历不少,但是因为 non-public APIs 而被拒还是第一次, 过程中也没少折腾, 所以记录一下, 帮助一下遇到同样问题的朋友, 也算做个笔记.Apple 邮件内容  Guideline 2.5.1 - Performance - Software Requirements  Your app uses or references the following non-public APIs:  PrivateFrameworks/AdSupport.framework ()  The use of non-public APIs is not permitted on the App Store because it can lead to a poor user experience should these APIs change.  Continuing to use or conceal non-public APIs in future submissions of this app may result in the termination of your Apple Developer account, as well as removal of all associated apps from the App Store.  Next Steps  If you are using third-party libraries, please update to the most recent version of those libraries. If you do not have access to the libraries’ source, you may be able to search the compiled binary using the “strings” or “otool” command line tools. The “strings” tool can output a list of the methods that the library calls and “otool -ov” will output the Objective-C class structures and their defined methods. These tools can help you narrow down where the problematic code resides. You could also use the “nm” tool to verify if any third-party libraries are calling these APIs.  Resources  For information on the “nm” tool, please review the “nm tool” Xcode manual page.  If there are no alternatives for providing the functionality your app requires, you can file an enhancement request.正文关于邮件中指出的 PrivateFrameworks/AdSupport.framework(), 首先可以肯定的是在我自己的代码中肯定是没有使用过的(如果自己使用过的就自己另行处理). 因此只能检查一下是否引入的第三方静态库中是否调用了Apple禁止调用的一些 API.利用命令检查 Mach-O 文件中是否包含 AdSupport 相关的字符(如果是其他提示可以换成相应的字符串).检查单个文件是否包含目标字符串, 使用如下命令来查看:此处检查了 .ipa 包内我们应用的 Mach-O 文件.$ strings -a filePath | grep AdSupport执行结果:$ strings -a ~/Desktop/JiTongBao | grep AdSupport/System/Library/PrivateFrameworks/AdSupport.framework/AdSupport/System/Library/PrivateFrameworks/AdSupport.framework/AdSupport由结果来看项目中确是包含了 AdSupport 相关的东西, 至于是哪里包含了 AdSupport, 还需要进一步检查.利用 Shell 检查工程下所有目录下的文件如果一个文件一个文件来检查将会非常耗时, 并且都是重复工作, 所以直接用脚本来检查是最好的选择.利用如下 ChekString.sh 来检查指定目录下的所有文件是否包含了目标字符.#!/bin/sh#  ChekString.sh##  Created by ZHK on 2018/6/13.#  Copyright © 2018年 ZHK. All rights reserved.shpath=$(cd `dirname $0`; pwd)function getdir() {    for element in `ls $1`        do            dir_or_file=$1&quot;/&quot;$element            if [ -d $dir_or_file ]; then                getdir $dir_or_file            else                // 检查每一个文件是否包含 `AdSupport`                res=`strings -a $dir_or_file | grep AdSupport`                if [ &quot;$res&quot; ]; then                    echo &quot;\\033[31m $dir_or_file \\033[0m&quot;  // 输出文件路径为红色字体                    echo &quot;\\033[33m $res \\033[0m&quot;          // 输出匹配到的字符串黄色字体                    echo &#39;&#39;                fi            fi        done}getdir $shpath使用方法:直接把 ChekString.sh 放到需要检查的工程根目录下, 然后使用命令:$ sh `shell 文件的路径`// 或者$ cd `PROJECT_DIR`$ sh ChekString.sh工程目录下所有文件检查结果如下:由此可以看出, 在如下文件中包含了 AdSupport 相关的字符.`/Users/tianchaojiang/Desktop/ProjectDir/ChekString.sh`  res=`strings -a $dir_or_file | grep AdSupport``/Users/tianchaojiang/Desktop/ProjectDir/Vender/Rong360/Framework/Fabric.framework`/uploadDSYM  System/Library/Frameworks/AdSupport.framework`/Users/tianchaojiang/Desktop/ProjectDir/Vender/Rong360/uploadDSYM`  System/Library/Frameworks/AdSupport.framework`/Users/tianchaojiang/Desktop/ProjectDir/Vender/ZhimaCredit/ZMDependUponSDK.framework/Versions/A/ZMDependUponSDK`  System/Library/PrivateFrameworks/AdSupport.framework/AdSupport`/Users/tianchaojiang/Desktop/ProjectDir/Vender/ZhimaCredit/ZMDependUponSDK.framework/Versions/Current/ZMDependUponSDK`  System/Library/PrivateFrameworks/AdSupport.framework/AdSupport`/Users/tianchaojiang/Desktop/ProjectDir/Vender/ZhimaCredit/ZMDependUponSDK.framework/ZMDependUponSDK`  System/Library/PrivateFrameworks/AdSupport.framework/AdSupport解决方法  最简单的方法就是直接把相关的文件直接删除.  引入进来的静态库或者一些类文件被引入进来肯定都是要使用的. 那就只能通过提交应用时候勾选使用了IDFA, 并且根据情况来勾选对应的选项.  但是现在我的情况是引入的相关库的功能是必须的 (并且官方略坑, 并不提供 NO-IDFA 版本的 SDK), 并且也设置了 IDFA 相关的选项依旧审核通过不了, 并且沟通也没有结果的. 最后只好加了广告 SDK, 做了个广告, 上线后再隐藏掉广告. 解决办法相当的不优雅.如果你有什么更好的方法, 欢迎补充~"
+  },
+  
+  {
+    "title": "Xcode 多个 target 的管理",
+    "url": "/posts/Xcode-%E5%A4%9A%E4%B8%AA-target-%E7%9A%84%E7%AE%A1%E7%90%86/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2018-05-01 22:35:40 +0800",
+    
+
+
+
+
+
+    "snippet": "前言工作中总会遇到一些这样那样的需求, 比如需要打包一个 Appstore版 + 企业版. 但是却总要手动修改 Bundle Id 等等的这些信息, 比较麻烦(当然马甲包也可以这么搞),最重要的万一某一个宏忘记手动切换了,但是测试又没测出来就上架了 Appstore ,那问题就大了. 于是就有了这篇文章.简介这里用到的方法主要是对 target 进行复制, 并且使用脚本自动化的修改条件宏来通过 条件编译 达到我们的目的.复制 target右键点击需要复制的 target, 点击 Duplicate.就会复制出一份新的 target.此时选择新的 target 编译运行正常情况是能够直接通过的.Target 的配置复制一些需要区别配置或者不同代码的文件.  AppDelegate 需要配置一些第三方的 key.比如友盟 个推等.为了避免麻烦我直接拿出来分别写  Assets.xcassets 里面有不同的图片资源, 也需要复制一份.  Info.plist 工程一些配置信息.  main.m 里面需要配置 AppDelegate .(下面会讲)  Main.Storyboard  LaunchScreen.storyboard根据自身需求决定哪些文件需要 copy 新的.文件配置因为同一个工程内部不能有 同名的类 , 所以复制出来的 AppDelegate 需要修改一下名称 比如 NewAppDelegate.这里就用到了 main.m.需要在 main.m 中做如下修改:int main(int argc, char * argv[]) {    @autoreleasepool {        return UIApplicationMain(argc, argv, nil, NSStringFromClass([NewAppDelegate class]));    }}类/文件的归属配置:这里是重点,配置不对将会很麻烦,甚至导致工程跑步起来.此处以 main.m 为例:选中 main.m 文件之后, Xcode 右侧区域中会出现 Target Membership 栏目. 如图所示: 此时选中的 target 就是该文件的归属, 通俗点就是在哪个 target 里面生效. 同一个文件也可以同时归属多个 target.大部分文件都可以通过这种方式来设置. 比如: class, xib, storyboard, xcassets 等.  如果编译时候某个类找不到了,就可以在这个地方把对应的 target 勾选中就可以了.条件宏的自动化分别创建宏的 头文件 Config.h 和 脚本文件 Config.sh.配置脚本在 Build Phases 中点击左上角 + 新建一个 Run Script.在如图的位置写上执行脚本的路径// $PROJECT_DIR 是工程根目录, 根据情况来写$PROJECT_DIR/Config/Config.sh脚本在 Config.sh 中写入如下脚本:// 开关配置的头文件路径, 根据情况来HeaderPath=$SRCROOT/Config/ProjectConfig.h// 通过判断 Bundle Id 来区分当前编译的是哪个 Targetif [ $PRODUCT_BUNDLE_IDENTIFIER == &quot;com.example.app1&quot; ]; then    // 把开关宏的值输入到配置文件内    echo &quot;#define TARGET_SWITCH 0&quot; &#39;// app1&#39;  &amp;gt; $HeaderPathelif [ $PRODUCT_BUNDLE_IDENTIFIER == &quot;com.example.app2&quot; ]; then    echo &quot;#define TARGET_SWITCH 1&quot; &#39;// app2&#39; &amp;gt; $HeaderPathelif [ $PRODUCT_BUNDLE_IDENTIFIER == &quot;com.example.app3&quot; ]; then    echo &quot;#define TARGET_SWITCH 2&quot; &#39;// app2&#39; &amp;gt; $HeaderPathelse    echo &quot;// 未配置&quot; &amp;gt; $HeaderPathfi此时选择不同的 target ,  不管Run 还是 Build, 在 Config.h 中就会自动在#define TARGET_SWITCH 0#define TARGET_SWITCH 1...#define TARGET_SWITCH n之间自动切换了.  脚本的原理就是判断不同 target 的 bundle id 在 Config.h 写入不同的宏.关于脚本怎么写, 可以自己学习一下 Shell结束到此, 你就可以根据 TARGET_SWITCH 的值来对不同的 target 区别编译不同的代码了.  补充: 虽然这个比较方便,但是却有可能因为某一个 target 的代码无法编译通过而导致其他的 target 也无法编译通过,因此要做好不同 target 代码的屏蔽."
+  },
+  
+  {
+    "title": "Cycript 安装",
+    "url": "/posts/Cycript-%E5%AE%89%E8%A3%85/",
+    "categories": "开发总结, iOS逆向",
+    "tags": "",
+    "date": "2018-04-18 11:31:22 +0800",
+    
+
+
+
+
+
+    "snippet": "下载 Cycript下载地址: http://www.cycript.org/安装解压后直接把 cycript_0.9.594 文件夹放到 /opt 目录下.控制台输入命令$ /opt/cycript_0.9.594$ ./cycript运行结果如下:至此已经算是安装成功了.  快捷键 control + D 退出 Cycript配置但是此时在其他目录下却无法使用 cycript 命令.控制台输入命令$ open ~$ vim .bash_profile在下面加入绿框内的配置信息# Cycript// /opt/cycript_0.9.594 就是 cycript 的存放路径export CY_PATH_ROOT=/opt/cycript_0.9.594export PATH=$CY_PATH_ROOT:$PATH保存并退出.输入以下命令$ source .bash_profile$ cycript结果如下图:此时在任何目录下都可以使用 cycript 命令了.关于 Oh My Zsh如果你还安装了 Oh My Zsh 的话, 仅仅以上那些配置可能使用起来还是比较麻烦,因为你每次启动终端都需要手动执行 $ source .bash_profile 命令才可以正常的使用.要解决这个问题, 需要对 Oh My Zsh 的配置稍作修改.输入以下命令:$ cd ~$ vim .zshrc进入 .zshrc 编辑窗口.在如图所示位置添加 source .bash_profile, 之后就无需每次启动都要先手动执行命令了."
+  },
+  
+  {
+    "title": "iOS APP 图标 3D Touch 菜单",
+    "url": "/posts/iOS-APP-%E5%9B%BE%E6%A0%87-3D-Touch-%E8%8F%9C%E5%8D%95/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2018-03-21 11:32:19 +0800",
+    
+
+
+
+
+
+    "snippet": "前言3D Touch 已经是几年前的东西了,但是项目一直没有涉及过相关的功能.所以今年查了一些相关的资料写个 demo 学习一下并做个总结方便以后使用.设置图标给应用图标添加 3D Touch 的菜单一共有2种方式: 静态添加 和 动态添加.静态添加直接在 info.plist 文件中设置如下字段:菜单字段 UIApplicationShortcutItems 数组, 可以设置多个 item.每个 item 可以包含以下字段:            Key      Required      Description                  UIApplicationShortcutItemType      YES      可以理解为标识符              UIApplicationShortcutItemTitle      YES      标题              UIApplicationShortcutItemSubtitle      NO      副标题              UIApplicationShortcutItemIconType      NO      如果使用系统图标的话使用这个              UIApplicationShortcutItemIconFile      NO      自定义图标图片名称              UIApplicationShortcutItemUserInfo      NO      One use for this dictionary is to provide app version information      info.plist 中的配置:  &amp;lt;key&amp;gt;UIApplicationShortcutItems&amp;lt;/key&amp;gt;	&amp;lt;array&amp;gt;		&amp;lt;dict&amp;gt;            // 系统图标类型			&amp;lt;key&amp;gt;UIApplicationShortcutItemIconType&amp;lt;/key&amp;gt;          			&amp;lt;string&amp;gt;UIApplicationShortcutIconTypeShare&amp;lt;/string&amp;gt;                // 标题 key			&amp;lt;key&amp;gt;UIApplicationShortcutItemTitle&amp;lt;/key&amp;gt;             			&amp;lt;string&amp;gt;分享&amp;lt;/string&amp;gt;                                              // 标识符 (用于判断哪个 item 被点击)			&amp;lt;key&amp;gt;UIApplicationShortcutItemType&amp;lt;/key&amp;gt;			&amp;lt;string&amp;gt;share&amp;lt;/string&amp;gt;                                 		&amp;lt;/dict&amp;gt;		&amp;lt;dict&amp;gt;			&amp;lt;key&amp;gt;UIApplicationShortcutItemIconType&amp;lt;/key&amp;gt;			&amp;lt;string&amp;gt;UIApplicationShortcutIconTypeAdd&amp;lt;/string&amp;gt;			&amp;lt;key&amp;gt;UIApplicationShortcutItemTitle&amp;lt;/key&amp;gt;			&amp;lt;string&amp;gt;添加&amp;lt;/string&amp;gt;			&amp;lt;key&amp;gt;UIApplicationShortcutItemType&amp;lt;/key&amp;gt;			&amp;lt;string&amp;gt;add&amp;lt;/string&amp;gt;		&amp;lt;/dict&amp;gt;	&amp;lt;/array&amp;gt;动态添加动态设置也比较简单:  通过 UIApplicationShortcutIcon 创建图标.  通过 UIApplicationShortcutItem 来创建菜单 item 对象.  把 item 数组赋值给 [UIApplication sharedApplication].shortcutItems/** 添加 items */- (void)addShortcutItems {    // share    UIApplicationShortcutIcon *shareIcon = [UIApplicationShortcutIcon iconWithType:UIApplicationShortcutIconTypeShare];    UIApplicationShortcutItem *shareItem = [[UIApplicationShortcutItem alloc] initWithType:@&quot;Share&quot; localizedTitle:@&quot;Share&quot; localizedSubtitle:nil icon:shareIcon userInfo:nil];        // add    UIApplicationShortcutIcon *addIcon = [UIApplicationShortcutIcon iconWithType:UIApplicationShortcutIconTypeAdd];    UIApplicationShortcutItem *addItem = [[UIApplicationShortcutItem alloc] initWithType:@&quot;Add&quot; localizedTitle:@&quot;Add&quot; localizedSubtitle:nil icon:addIcon userInfo:nil];        [UIApplication sharedApplication].shortcutItems = @[shareItem, addItem];}然后在 application: didFinishLaunchingWithOptions: 中调用 addShortcutItems 方法.- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {    [self addShortcutItems];    return YES;}系统提供的图标种类:typedef NS_ENUM(NSInteger, UIApplicationShortcutIconType) {    UIApplicationShortcutIconTypeCompose,    UIApplicationShortcutIconTypePlay,    UIApplicationShortcutIconTypePause,    UIApplicationShortcutIconTypeAdd,    UIApplicationShortcutIconTypeLocation,    UIApplicationShortcutIconTypeSearch,    UIApplicationShortcutIconTypeShare,    UIApplicationShortcutIconTypeProhibit       NS_ENUM_AVAILABLE_IOS(9_1),    UIApplicationShortcutIconTypeContact        NS_ENUM_AVAILABLE_IOS(9_1),    UIApplicationShortcutIconTypeHome           NS_ENUM_AVAILABLE_IOS(9_1),    UIApplicationShortcutIconTypeMarkLocation   NS_ENUM_AVAILABLE_IOS(9_1),    UIApplicationShortcutIconTypeFavorite       NS_ENUM_AVAILABLE_IOS(9_1),    UIApplicationShortcutIconTypeLove           NS_ENUM_AVAILABLE_IOS(9_1),    UIApplicationShortcutIconTypeCloud          NS_ENUM_AVAILABLE_IOS(9_1),    UIApplicationShortcutIconTypeInvitation     NS_ENUM_AVAILABLE_IOS(9_1),    UIApplicationShortcutIconTypeConfirmation   NS_ENUM_AVAILABLE_IOS(9_1),    UIApplicationShortcutIconTypeMail           NS_ENUM_AVAILABLE_IOS(9_1),    UIApplicationShortcutIconTypeMessage        NS_ENUM_AVAILABLE_IOS(9_1),    UIApplicationShortcutIconTypeDate           NS_ENUM_AVAILABLE_IOS(9_1),    UIApplicationShortcutIconTypeTime           NS_ENUM_AVAILABLE_IOS(9_1),    UIApplicationShortcutIconTypeCapturePhoto   NS_ENUM_AVAILABLE_IOS(9_1),    UIApplicationShortcutIconTypeCaptureVideo   NS_ENUM_AVAILABLE_IOS(9_1),    UIApplicationShortcutIconTypeTask           NS_ENUM_AVAILABLE_IOS(9_1),    UIApplicationShortcutIconTypeTaskCompleted  NS_ENUM_AVAILABLE_IOS(9_1),    UIApplicationShortcutIconTypeAlarm          NS_ENUM_AVAILABLE_IOS(9_1),    UIApplicationShortcutIconTypeBookmark       NS_ENUM_AVAILABLE_IOS(9_1),    UIApplicationShortcutIconTypeShuffle        NS_ENUM_AVAILABLE_IOS(9_1),    UIApplicationShortcutIconTypeAudio          NS_ENUM_AVAILABLE_IOS(9_1),    UIApplicationShortcutIconTypeUpdate         NS_ENUM_AVAILABLE_IOS(9_1)} NS_ENUM_AVAILABLE_IOS(9_0) __TVOS_PROHIBITED;事件响应判断 item 被点击只需要判断给 item 设置的 item.type 并做相应操作即可.- (void)application:(UIApplication *)application performActionForShortcutItem:(nonnull UIApplicationShortcutItem *)shortcutItem completionHandler:(nonnull void (^)(BOOL))completionHandler {    // 根据 shortcutItem.type 判断点击的是哪个 item    if ([shortcutItem.type isEqualToString:@&quot;Add&quot;]) {        ...    }}自定义 ICON// 自定义 icon[UIApplicationShortcutIcon iconWithTemplateImageName:@&quot;custom&quot;];在文档中指出:  Icons should be square, single color, and 35x35 points自定义的 icon 必须是 35 * 35 的 正方形 单色 的图片虽然我尝试了一下用 200 * 200 的图依旧能够正常显示.但是最好还是按照文档讲的标准来吧~补充  静态添加 和 动态添加 可以同时使用, 但是系统会先加载 静态 items, 然后再加载 动态 items.  开发者自定义的貌似最多只能添加 4 个 item, 加上系统会自带一个 分享应用 一共 5 个.(虽然没有看到文档里面有写个数限制)上面中文的 2 个为 静态添加 , 下面 2 个为 动态添加. Custom 为自定义图标.手头没有修图工具, 因此图标略显大.内容边框留足透明像素区域应该会美观一点, 跟系统的保持一致."
+  },
+  
+  {
+    "title": "从国家授时中心网站获取时间(获取网络时间)",
+    "url": "/posts/%E4%BB%8E%E5%9B%BD%E5%AE%B6%E6%8E%88%E6%97%B6%E4%B8%AD%E5%BF%83%E7%BD%91%E7%AB%99%E8%8E%B7%E5%8F%96%E6%97%B6%E9%97%B4(%E8%8E%B7%E5%8F%96%E7%BD%91%E7%BB%9C%E6%97%B6%E9%97%B4)/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2018-03-02 17:28:56 +0800",
+    
+
+
+
+
+
+    "snippet": "获取时间的原理很简单, 就是从网站的请求响应头部读取时间.具体实现这里以 国家授时中心 网站为例,.当然,百度什么的网站也是可以的(只是此时获取的是百度的服务器时间).首先看一下 国家授时中心 网站响应头信息:那么我们只需要拿到 请求响应头 , 然后获取到 Date 字段并对其进行格式化即可.代码很简单:我们无需关注拿到的数据, 只要获取到 response 即可.NSURL *url = [NSURL URLWithString:@&quot;http://www.ntsc.ac.cn/&quot;];NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];// 此处无需获取其他内容, 只需要获取响应头即可, 因此请求方式使用 HEADrequest.HTTPMethod = @&quot;HEAD&quot;;NSURLSessionTask *task =[[NSURLSession sharedSession] dataTaskWithRequest:request completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {    NSHTTPURLResponse *res = (NSHTTPURLResponse *)response;    NSDateFormatter *formatter = [[NSDateFormatter alloc] init];    formatter.dateFormat = @&quot;EEE, dd MMM yyyy HH:mm:ss Z&quot;;    // 不设置地区的话, 在我们自己的机器上面默认就是中文的格式,     // 最终结果是 null    formatter.locale = [[NSLocale alloc] initWithLocaleIdentifier:@&quot;en_US&quot;];    NSDate *date = [formatter dateFromString:[[res allHeaderFields] valueForKey:@&quot;Date&quot;]];    formatter.dateFormat = @&quot;yyyy-MM-dd HH:mm:ss&quot;;    NSLog(@&quot;date = %@&quot;, [formatter stringFromDate:date]);}];[task resume];输出结果:date = 2018-03-02 17:13:17"
+  },
+  
+  {
+    "title": "iOS Framework 真机包和模拟器包合成",
+    "url": "/posts/iOS-Framework-%E7%9C%9F%E6%9C%BA%E5%8C%85%E5%92%8C%E6%A8%A1%E6%8B%9F%E5%99%A8%E5%8C%85%E5%90%88%E6%88%90/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2018-03-02 10:22:16 +0800",
+    
+
+
+
+
+
+    "snippet": "文件路径目录:os: 真机 Framework 存放目录sum: 模拟器 Framework 存放目录查看 Framework 支持的指令集:lipo -info [Frmework路径]这里有个小坑, 第一次做的人估计会遇到.Framework路径指的是红框内的 ZHKChartKit 这个文件, 而不是绿框的 ZHKChartKit.framework 文件(毕竟我就是踩过这个坑的人).以图片中的例子,命令应该是这样:// 先进入目录cd .../ZHKChartKit.framework// 查看信息的指令lipo -info ZHKChartKit结果如下:如图:分别只支持armv7, arm64, armv7s 和 i386, x86_64合并 Framework命令// 把 真机Framework 和 模拟器Framework 合并入真机 Framework 里面lipo -create [真机Framework路径] [模拟器Framework路径] -output [真机Framework路径]此处的路径跟上面查看信息的路径一样, 是 ZHKChartKit 的路径, 而不是 ZHKChartKit.framework 的路径.合并结果:到此就算已经合并成功了,我们的 Framework 同时支持了 armv7, arm64, armv7s 和 i386, x86_64"
+  },
+  
+  {
+    "title": "CMake Error: Could not create named generator Xcode",
+    "url": "/posts/Could-not-create-named-generator-Xcode/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2018-01-20 22:22:19 +0800",
+    
+
+
+
+
+
+    "snippet": "这个错误是今天在使用 Cocoapods 安装 cmark 时候, CMake 报出的错误. 其实错误原因很简单,只是一时没想到.命令行报错信息如下图:百度没什么用只好求助于 Google, 看了不少求助帖. 但是都解决不了.其中有一个帖子最后的一句话给了我提醒:  The generator is called Xcode and not XCode.看到这句话感觉挺奇怪, 我不仅装了 Xcode, 并且还装了2个.想到这里突然意识到是不是装了2个 Xcode 的问题.于是打开应用列表看了一下:突然发现以前为了防止安装2个 Xcode 时候冲突, 就以版本号为后缀重命名了  Xcode.到这里问题出现在哪已经很明显了.既然是因为没有调到 Xcode ,是因为 Xcode 不存在, 那就是改名字的原因了?于是把其中一个 名字重新改回 Xcode 之后重新 pod install问题解决."
+  },
+  
+  {
+    "title": "利用手势冲突限制 UITableViewCell 有效点击范围",
+    "url": "/posts/%E5%88%A9%E7%94%A8%E6%89%8B%E5%8A%BF%E5%86%B2%E7%AA%81%E9%99%90%E5%88%B6-UITableViewCell-%E6%9C%89%E6%95%88%E7%82%B9%E5%87%BB%E8%8C%83%E5%9B%B4/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2017-12-30 09:58:58 +0800",
+    
+
+
+
+
+
+    "snippet": "简介手势冲突 肯定不少人遇到过, 并且应该都是以 bug 的形式出现的.我以前第一次遇到的时候也挺头疼.但是今天我要利用这个 bug 的原理来完成一个工作中遇到的需求.正文前几天拿到一张 UI 设计图, 如图:看到这张设计图我的第一反应就是利用 UITableView 来写页面布局, 上面3张卡片用 UITableViewCell 写, 底部的 个人信息 和 button 全部写在 FooterView 上.于是快速的按照一开始的想法把页面撸了出来了, 效果看起来跟效果图也一模一样. 然而美中不足的就是点击的时候整个 cell 点击都有效果. 当然有大把的办法来解决这个问题, 比如使用 delegate, block都可以. 但是在强迫症的驱使下, 既然使用了 UITableView, 我更加倾向于使用 UITableViewDelegate 协议的方法来处理 cell 的点击事件.- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath 但是这样就必须解决 cell 被点击时候的有效点击范围, 也就是只有图片范围内点击时候才会调用 didSelectRowAtIndexPath , 点击其他空白部分不会被回调.于是第一时间就想到以前因为添加自定义手势而导致 cell 本身点击 didSelectRowAtIndexPath 不会回调的问题.于是按照以前写出 bug 的办法来搞首先给 cell.contentView 添加自定义手势:// 利用手势冲突, 配合代理方法限制有效点击范围在 card 内UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapAction)];tap.delegate = self;[self.contentView addGestureRecognizer:tap];然后实现 tap 手势触发的回调方法:#pragma mark - Action- (void)tapAction {    NSLog(@&quot;%s&quot;, __func__);}实现 tap 的代理方法:  通过 tap 的 delegate 方法来区分触发手势时候, 被点击到的视图如果点击的是图片, 也就是 resultImageView 则返回 NO, 该次点击会被忽略, 把点击事件传递到下一级视图进行处理, 则此时 didSelectRowAtIndexPath 会被调用#pragma mark - UIGestureRecognizer delegate- (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldReceiveTouch:(UITouch *)touch {    if ([touch.view isEqual:_resultImageView]) {        return NO;    }    return YES;}以下是 didSelectRowAtIndexPath 方法:// row select- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {    [tableView deselectRowAtIndexPath:indexPath animated:YES];    NSLog(@&quot;%s&quot;, __func__);    if (indexPath.row == 0) {        // 正面    } else if (indexPath.row == 1) {            // 反面    } else {            // 人脸识别    }}验证点击 cell 的空白位置控制台打印:点击 图片 的 卡片 区域控制台打印如图:结果看结果来说, 这样的做法的确是达到起初的目的:  只有点击卡片时候, 让 didSelectRowAtIndexPath 被回调, 其他部分点击无效.想要达到同意的目的, 方法并不是唯一的, 类似的比如还有下面这个方法也可以达到一样的效果:- (UIView *)hitTest:(CGPoint)point withEvent:(UIEvent *)event文内这样的做法只是我临时脑内闪过的想法, 也就是想利用以前遇到的 bug 来解决一下当前的需求, 于是就做来试试, 验证一下想法."
+  },
+  
+  {
+    "title": "第一次因为社会化分享被拒",
+    "url": "/posts/%E7%AC%AC%E4%B8%80%E6%AC%A1%E5%9B%A0%E4%B8%BA%E7%A4%BE%E4%BC%9A%E5%8C%96%E5%88%86%E4%BA%AB%E8%A2%AB%E6%8B%92/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2017-12-22 23:29:11 +0800",
+    
+
+
+
+
+
+    "snippet": "以前 App 审核从来没有因为 社会化分享 被拒的情况, 今天也是第一次遇到邮件大概内容如下:  Guideline 2.1 - Performance - App Completeness  Your app or its metadata does not appear to include final content. Specifically, your app’s sharing feature contains placeholder.  Please see attached screenshots for details.  Next Steps  To resolve this issue, please review your app and metadata to ensure that all of its content is final.  Since your iTunes Connect status is Rejected, a new binary will be required. Make the desired metadata changes when you upload the new binary.  NOTE: Please be sure to make any metadata changes to all app localizations by selecting each specific localization and making appropriate changes.给的截屏如图:看了一下,大概原因就是这个社会化分享里面是空的, 没有内容所以被打回.分享是直接集成的 友盟 的 SDK ,一共添加了: QQ聊天, QQ空间, 微信聊天, 微信朋友圈.友盟推荐的设置就是:如果用户手机没有安装相关平台的 app 的时候, 就隐藏该平台的图标, 以防审核被拒. 于是按照推荐配置, 结果还是逃不过苹果审核的魔掌, 惨遭被拒.既然是这个原因被拒的话, 那么有2个解决办法:  回复邮件跟苹果解释, 告诉他原因 (结果全看脸).  下次直接把社会化分享的短信分享也座上去, 这样至少会有一个内容显示, 保证分享平台选择框不是空荡荡的 (见招拆招).补充这个是尝试解释的结果…吸取这次教训, 以后还是做好万全的准备再提交审核 (看来只能做个 短信 分享了).  Hello,  Thank you for providing this information.  Guideline 4.2.3 - Design - Minimum Functionality  We were required to install the QQ and 微信(WeChat) apps. Users should be able to access their accounts without having to install any additional apps.  Next Steps  If you would like to offer authentication through QQ and 微信(WeChat), please use a mechanism that allows users to log in from within your app without first having to install an additional app.  We recommend implementing the Safari View Controller API to display web content within your app. The Safari View Controller allows the display of a URL and inspection of the certificate from an embedded browser in an app so that customers can verify the webpage URL and SSL certificate to confirm they are entering their sign in credentials into a legitimate page.  Resources  For additional information on the Safari View Controller API, please review the What’s New in Safari webpage.  Best regards,  App Store Review"
+  },
+  
+  {
+    "title": "用户评论的几种解决方案",
+    "url": "/posts/%E7%94%A8%E6%88%B7%E8%AF%84%E8%AE%BA%E7%9A%84%E5%87%A0%E7%A7%8D%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2017-12-12 14:52:02 +0800",
+    
+
+
+
+
+
+    "snippet": "应用内打开 Appstore 内的应用信息页面#import &amp;lt;StoreKit/StoreKit.h&amp;gt;// 在应用内打开 Appstore 显示应用信息- (void)openAppstoreInApp {    SKStoreProductViewController *productVC = [[SKStoreProductViewController alloc] init];    productVC.delegate = self;    [productVC loadProductWithParameters:@{SKStoreProductParameterITunesItemIdentifier : @&quot;1076935491&quot;} completionBlock:^(BOOL result, NSError * _Nullable error) {    }];    [self presentViewController:productVC animated:YES completion:nil];}#pragma mark - SKStoreProductViewController delegate// 点击完成回调- (void)productViewControllerDidFinish:(SKStoreProductViewController *)viewController {    [viewController dismissViewControllerAnimated:YES completion:nil];}应用内弹框提醒用户评论  iOS 10.3之后可用#import &amp;lt;StoreKit/StoreKit.h&amp;gt;[SKStoreReviewController requestReview];弹框大概长这个样子:跳转到 Appstore 并自动打开填写评论页面NSString *appstoreUrlString = [NSString stringWithFormat:                                   @&quot;itms-apps://itunes.apple.com/gb/app/id%@?action=write-review&amp;amp;mt=8&quot;,                                   @&quot;1076935491&quot; ];NSURL * url = [NSURL URLWithString:appstoreUrlString];if ([[UIApplication sharedApplication] canOpenURL:url]) {    [[UIApplication sharedApplication]openURL:url];}else {    NSLog(@&quot;can not open&quot;);}大概是这个样子:"
+  },
+  
+  {
+    "title": "UIWebView 加载本地 CSS, JS",
+    "url": "/posts/UIWebView-%E5%8A%A0%E8%BD%BD%E6%9C%AC%E5%9C%B0-CSS,JS/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2017-12-10 19:39:22 +0800",
+    
+
+
+
+
+
+    "snippet": "前言之前使用UIWebView 或者WKWebView加载本地CSS JS时候直接:// html 为其他途径获取到的 html 字符串NSURL *baseURL = [NSURL URLWithString:[NSBundle mainBundle].bundlePath];[_webView loadHTMLString:html baseURL:baseURL];设置一下 baseURL就能轻松加载到相对路径下的CSS JS资源文件.但是这次却遇到了比较特殊的情况:正文问题所谓的特殊情况就是这次我拿到的html是由Markdown转换过来的html字符串,本身包含有完整的URL信息.比如这样的内容.// img 标签&amp;lt;img src=&quot;http://img.google.com/image.png&quot;&amp;gt;// 其他引入的 css, js 等&amp;lt;script src=&quot;http://cdn.google.com/keymaster.min.js&quot; type=&quot;text/javascript&quot;&amp;gt;&amp;lt;/script&amp;gt;&amp;lt;link href=&quot;http://cdn.google.com/prism.css&quot; rel=&quot;stylesheet&quot; type=&quot;text/css&quot; /&amp;gt;在这种情况下:  既有相对路径,又有完整URL的时候.设置了baseURL就会导致这些有完整URL的图片,JS,CSS等内容不能够正常加载.解决办法思路  把所有的相对路径都补充成完整的URL.  通过NSURLProtocol来拦截请求并替换内容达到需求目的.做法此处不介绍NSURLProtocol用法,直接说解决办法:如果原来资源文件的相对路径为/jquery.js.那么现在把相对路径的路径全部补全为 http://cdn.zhk1024.com/jquery.js.此时URL的host则为cdn.zhk1024(此处host可以根据自己情况来写).则在+ (BOOL)canInitWithRequest:方法内过滤host为cdn.zhk1024的所有请求,此类请求都是需要拦截的对象.此处补全的 host 必须是在应用内没有使用过的域名+ (BOOL)canInitWithRequest:(NSURLRequest *)request {    if ([request.URL.host isEqualToString:@&quot;cdn.zhk1024&quot;]) {        // 此处返回 YES, 则该请求会进入 - (void)startLoading 方法         return YES;    }    return NO;}然后在- (void)startLoading方法内对拦截下来的请求进行处理此处主要是通过判断URL等能够区分出请求的特征来分别加载资源文件(CSS JS等),然后把数据提交给 URL加载系统 (URL Loading System).- (void)startLoading {    id &amp;lt;NSURLProtocolClient&amp;gt; client = [self client];    NSURLRequest *request = self.request;    NSString *path = [[request URL] absoluteString];    NSString *fileToLoad = nil;        if ([path isEqualToString:@&quot;http://cdn.zhk1024/reset.css&quot;]) {        fileToLoad = [[NSBundle mainBundle] pathForResource:@&quot;reset&quot; ofType:@&quot;css&quot;];    }    ....    其他判断此处省略    ....    // 加载本地文件的数据    NSData *data = [NSData dataWithContentsOfFile:fileToLoad];    NSHTTPURLResponse *response = [[NSHTTPURLResponse alloc] initWithURL:self.request.URL statusCode:200 HTTPVersion:@&quot;HTTP/1.1&quot; headerFields:[NSDictionary dictionary]];    [client URLProtocol:self didReceiveResponse:response cacheStoragePolicy:NSURLCacheStorageNotAllowed];    [client URLProtocol:self didLoadData:data];    [client URLProtocolDidFinishLoading:self];}到此我们要做的事情就做完了,其他全部交给UIWebView即可.此处之所有没有写WKWebView是因为WKWebView和NSURLSession 如果使用NSURLProtocol的话需要一些特殊设置.而WKWebView支持NSURLProtocol更是需要使用一些私有 API,一方面是苹果审核问题,另一方面是私有 API稳定性没有保障. 因此最终选择了UIWebView."
+  },
+  
+  {
+    "title": "iOS动态更新技术探索 (下)",
+    "url": "/posts/iOS%E5%8A%A8%E6%80%81%E6%9B%B4%E6%96%B0%E6%8A%80%E6%9C%AF%E6%8E%A2%E7%B4%A2-(%E4%B8%8B)/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2017-12-08 19:16:08 +0800",
+    
+
+
+
+
+
+    "snippet": "正文没那么多废话, 直接正文服务端照旧使用 PHP 简单搞一搞全部代码:&amp;lt;?php    header(&quot;Content-type:application/json;charset=utf8&quot;);    $host = $_SERVER[&#39;HTTP_HOST&#39;];        $json[&#39;librarys&#39;] = [0 =&amp;gt; [&quot;name&quot;      =&amp;gt; &quot;Home&quot;,                               &quot;className&quot; =&amp;gt; &quot;HomeViewController&quot;,                               &quot;type&quot;      =&amp;gt; &quot;framework&quot;,                               &quot;url&quot;       =&amp;gt; &quot;http://&quot;.$host.&quot;/update/librarys/Home.framework.zip&quot;,                               &quot;version&quot;   =&amp;gt; &quot;1.0&quot;                              ]                            ];    //    $json[&#39;librarys&#39;] = [0 =&amp;gt; [&quot;name&quot;      =&amp;gt; &quot;Baidu&quot;,//                               &quot;className&quot; =&amp;gt; &quot;BaiduViewController&quot;,//                               &quot;type&quot;      =&amp;gt; &quot;framework&quot;,//                               &quot;url&quot;       =&amp;gt; &quot;http://&quot;.$host.&quot;/update/librarys/Baidu.framework.zip&quot;,//                               &quot;version&quot;   =&amp;gt; &quot;1.0&quot;//                              ]//                        ];      	echo json_encode($json);?&amp;gt;此部分返回的内容为 Home 模块相关信息, 内容为网络加载一张图片.$json[&#39;librarys&#39;] = [0 =&amp;gt; [&quot;name&quot;      =&amp;gt; &quot;Home&quot;,                           &quot;className&quot; =&amp;gt; &quot;HomeViewController&quot;,                           &quot;type&quot;      =&amp;gt; &quot;framework&quot;,                           &quot;url&quot;       =&amp;gt; &quot;http://&quot;.$host.&quot;/update/librarys/Home.framework.zip&quot;,                           &quot;version&quot;   =&amp;gt; &quot;1.0&quot;                          ]                      ];此部分返回的内容为 Baidu 模块相关信息, 内容为使用WKWebView加载https://www.baidu.com.$json[&#39;librarys&#39;] = [0 =&amp;gt; [&quot;name&quot;      =&amp;gt; &quot;Baidu&quot;,                           &quot;className&quot; =&amp;gt; &quot;BaiduViewController&quot;,                           &quot;type&quot;      =&amp;gt; &quot;framework&quot;,                           &quot;url&quot;       =&amp;gt; &quot;http://&quot;.$host.&quot;/update/librarys/Baidu.framework.zip&quot;,                           &quot;version&quot;   =&amp;gt; &quot;1.0&quot;                          ]                     ];服务器目录相关文件如图:librarys(应该是libraries?不要在意细节)  librarys文件夹下存放的是为客户端提供的相关动态库的压缩包.(动态库如何打包此处不做介绍)request.php就是服务端请求数据的接口文件效果当服务器返回Home时候效果如图:当服务器返回 Baidu时候效果如图:整个过程仅仅改变了服务器返回的 framwork 相关JSON信息.结论由此可见,如果模块,结构规划好的话, iOS 端也是完全能够实现 碎片化的插件 更新.只需设计好一开始的壳,后续就完全能靠动态库来开发各种功能.但是,现实是 Apple 不让这么玩,只能娱乐一下了.如果是企业版的话可以这么尝试一下.补充: 就当玩玩吧, 现在真机已经不让这么玩了…"
+  },
+  
+  {
+    "title": "iOS动态更新技术探索 (上)",
+    "url": "/posts/iOS%E5%8A%A8%E6%80%81%E6%9B%B4%E6%96%B0%E6%8A%80%E6%9C%AF%E6%8E%A2%E7%B4%A2-(%E4%B8%8A)/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2017-12-06 11:30:26 +0800",
+    
+
+
+
+
+
+    "snippet": "简介声明  该文章中的内容并不能用于实际项目中.(因为这样的玩法是被Apple禁止的).当然企业账号没人管,可以这么玩玩试试.文内也不包含什么高端技术.仅仅是突然想到了就做做试试,纯属个人兴趣,当做闲暇时间的娱乐.补充: 模拟器玩玩就可以, 在真机上,目前常见系统版本,几乎都已经不允许动态加载沙盒内的动态库了. ###目标:实现像 PC 游戏维护更新一样,每次更新至下载相关文件而无需重新全部下载.应用相关功能也全部由服务器提供下载更新部分内容的动态库来实现,而无需完全下载更新客户端.说明:工程共 2 个类:  Framework类主要处理网络相关内容.  ViewController类作为视图相关操作类.内容Framework类该类主要是负责处理服务器请求到的 framework 相关信息的处理以及服务下载 framework 相关库等操作.Framework 头文件相关属性相关方法未作展示#import &amp;lt;Foundation/Foundation.h&amp;gt;@interface Framework : NSObject// 服务器返回的相关字段@property (nonatomic, strong) NSString *name;       // 名称@property (nonatomic, strong) NSString *className;  // 类名@property (nonatomic, strong) NSString *type;       // 类型@property (nonatomic, strong) NSString *url;        // 下载地址@property (nonatomic, strong) NSString *version;    // 版本号// 本地需要使用到的属性@property (nonatomic, strong) NSString *fileName;   // 文件名 (解压后的 .framework 文件)@property (nonatomic, strong) NSString *cachePath;  // 下载文件缓存路径@property (nonatomic, strong) NSString *libPath;    // 解压后存放 fraework 文件夹路径@property (nonatomic, strong) NSString *loadPath;   // framework 的完整路径@endFramework 类实现最常见的一类方法,把从服务器请求回来的数据转换成 model 对象,方便相关操作/** 根据字典创建对象 @param dictionary 对象信息的字典 @return  framewor 信息对象 */+ (instancetype)frameworkWithDictionary:(NSDictionary *)dictionary {    Framework *lib = [[Framework alloc] init];    [lib setValuesForKeysWithDictionary:dictionary];    return lib;}/** 通过请求结果创建对象 @param data 请求数据 @return 信息对象数组 */+ (NSArray *)librarysWithRequestData:(NSArray *)data {    NSMutableArray *array = [NSMutableArray new];    for (NSDictionary *dic in data) {        [array addObject:[self frameworkWithDictionary:dic]];    }    return [array copy];}服务器获取 frmework 相关信息/** 获取最新的 library 信息  @param success 成功回调 @param failure 失败回调 */+ (void)frameworksInfoWithSuccess:(void(^)(NSArray *frameworks))success                          failure:(void(^)(NSError *error))failure {    [[AFHTTPSessionManager manager] POST:@&quot;http://172.16.30.197:8888/update/request.php&quot; parameters:nil progress:nil success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable responseObject) {        NSLog(@&quot;responseObject = %@&quot;, responseObject);        success([self librarysWithRequestData:responseObject[@&quot;librarys&quot;]]);    } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {        NSLog(@&quot;error = %@&quot;, error);        failure(error);    }];}取到 frmework 相关信息后,通过服务器返回的地址下载对应 framework 动态库文件  解压 zip 需要首先引入 #import &amp;lt;SSZipArchive.h&amp;gt;- (void)downLoad:(void(^)(NSError * error))resultBlock {    NSURL *url = [NSURL URLWithString:_url];    NSURLRequest *request = [NSURLRequest requestWithURL:url];    NSURLSessionDownloadTask *task =    [[AFHTTPSessionManager manager] downloadTaskWithRequest:request progress:^(NSProgress * _Nonnull downloadProgress) {    } destination:^NSURL * _Nonnull(NSURL * _Nonnull targetPath, NSURLResponse * _Nonnull response) {        return [NSURL fileURLWithPath:self.cachePath];    } completionHandler:^(NSURLResponse * _Nonnull response, NSURL * _Nullable filePath, NSError * _Nullable error) {        if (!error) {            [SSZipArchive unzipFileAtPath:self.cachePath toDestination:self.libPath];        }        resultBlock(error);    }];    [task resume];}以下是 Getter 方法  文件的存放的路径完全可以看自己的喜好拼接 frmework 动态库文件,name和type扩展名都有服务器返回- (NSString *)fileName {    if (_fileName == nil) {        self.fileName = [NSString stringWithFormat:@&quot;%@.%@&quot;, _name, _type];    }    return _fileName;}下载的 zip 文件的存放地址  因为直接下载 .framework 文件到本地之后,是一个无后缀的文件.为了避免出现别的问题直接由服务器提供 zip 文件,另外资源文件做相关压缩操作也可以减小文件大小,提升下载速度.  - (NSString *)cachePath {    if (_cachePath == nil) {        // 这里要返回一个NSURL，其实就是文件的位置路径        NSString * path = [self frameworkDir];        path = [path stringByAppendingPathComponent:@&quot;zip&quot;];        if (![[NSFileManager defaultManager] fileExistsAtPath:path isDirectory:nil]) {            [[NSFileManager defaultManager] createDirectoryAtPath:path withIntermediateDirectories:YES attributes:nil error:nil];        }        // 使用建议的路径        _cachePath = [path stringByAppendingPathComponent:self.fileName];        if ([[NSFileManager defaultManager] fileExistsAtPath:_cachePath]) {            [[NSFileManager defaultManager] removeItemAtPath:_cachePath error:nil];        }    }    return _cachePath;}    zip 文件解压后 framework 存放的文件夹路径  - (NSString *)libPath {    if (_libPath == nil) {        // 这里要返回一个NSURL，其实就是文件的位置路径        NSString * path = [self frameworkDir];        path = [path stringByAppendingPathComponent:@&quot;lib&quot;];        if (![[NSFileManager defaultManager] fileExistsAtPath:path isDirectory:nil]) {            [[NSFileManager defaultManager] createDirectoryAtPath:path withIntermediateDirectories:YES attributes:nil error:nil];        }        // 使用建议的路径        _libPath = path;        if ([[NSFileManager defaultManager] fileExistsAtPath:_libPath]) {            [[NSFileManager defaultManager] removeItemAtPath:_libPath error:nil];        }    }    return _libPath;}    framework 动态库文件完整的路径  - (NSString *)loadPath {    if (_loadPath == nil) {        NSString *path = [self.libPath stringByAppendingPathComponent:[NSString stringWithFormat:@&quot;%@.%@&quot;, _name, _type]];        self.loadPath = [path stringByAppendingPathComponent:_name];    }    return _loadPath;}    用于存放 zip 和 framework 文件的上路文件夹路径  - (NSString *)frameworkDir {    // 这里要返回一个NSURL，其实就是文件的位置路径    NSString * path = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) lastObject];    // 使用建议的路径    path = [path stringByAppendingPathComponent:@&quot;Framework&quot;];    if (![[NSFileManager defaultManager] fileExistsAtPath:path isDirectory:nil]) {        [[NSFileManager defaultManager] createDirectoryAtPath:path withIntermediateDirectories:YES attributes:nil error:nil];    }    return path;}  ViewController 类ViewController 是工程的主视图控制器,同时也担任了动态库的加载以及动态库入口类的实例化相关操作.- (void)viewDidLoad {    [super viewDidLoad];    [self serverLibiaryVersion];}参数 className 是已经约定好的动态库内部功能的入口类类名, 并且动态库里必须包含该类.否则相关操作也会失败.- (void)startAppWithClassName:(NSString *)className {    Class class = NSClassFromString(className);    UIViewController *vc = [[class alloc] init];;    [self addChildViewController:vc];    [self.view addSubview:vc.view];}获取服务器目前提供的最新版本的动态库.当前并未实现版本号等对比的逻辑,仅仅只是直接从服务器下载返回的版本信息指定的动态库并进行加载运行.相关原理大概就是这样,此处可以作为后续研究./** 获取服务器动态库版本信息 */- (void)serverLibiaryVersion {    [Framework frameworksInfoWithSuccess:^(NSArray *frameworks) {        [self loadFrameworks:frameworks];    } failure:^(NSError *error) {        NSLog(@&quot;error = %@&quot;, error);    }];}根据服务器返回的动态库文件地址下载动态库文件/** 下载动态库 */- (void)loadFrameworks:(NSArray *)frameworks {    Framework *framework = frameworks[0];        [framework downLoad:^(NSError *error) {        if (error) {            NSLog(@&quot;error = %@&quot;, error);        }else {            [self dlopenLoadDylibWithPath:framework.loadPath];            [self startAppWithClassName:framework.className];        }    }];}加载本地动态库加载本地动态库 首先需要引入 #import   dlopen() 是一个计算机函数，功能是以指定模式打开指定的动态链接库文件，并返回一个句柄给 dlsym() 的调用进程。使用 dlclose() 来卸载打开的库。通过 framework 文件在本地的路径加载该动态库./** 通过路径加载动态库 */- (BOOL)dlopenLoadDylibWithPath:(NSString *)path {    void * libHandle = NULL;    libHandle = dlopen([path cStringUsingEncoding:NSUTF8StringEncoding], RTLD_NOW);    if (libHandle == NULL) {        char *error = dlerror();        NSLog(@&quot;dlopen error: %s&quot;, error);        dlclose(libHandle);        return NO;    } else {        NSLog(@&quot;dlopen load framework success.&quot;);        dlclose(libHandle);        return YES;    }}未完待续后续服务端以及最终效果见: iOS动态更新技术探索 (下)"
+  },
+  
+  {
+    "title": "iOS 应用备份文件,导入文件",
+    "url": "/posts/iOS-%E5%BA%94%E7%94%A8%E5%A4%87%E4%BB%BD%E6%96%87%E4%BB%B6,%E5%AF%BC%E5%85%A5%E6%96%87%E4%BB%B6/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2017-11-11 17:12:56 +0800",
+    
+
+
+
+
+
+    "snippet": "只需要在 Info.plist 文件中添加 UIFileSharingEnabled ,并设置为 YES, 其他什么都无需做.手机插上 Mac:iTunes -&amp;gt; 应用 -&amp;gt; 文件共享 -&amp;gt; 需要备份/导入文件的应用 -&amp;gt; 就能看到备份的文件此时看到的文件就是应用 Document 目录下的文件.需要备份直接把文件拖拽到电脑上就完成了备份.导入文件则直接拖拽进去,或者点击下面的 添加 按钮也可以不管备份还是导入,操作的都是 Document 目录下的文件.."
+  },
+  
+  {
+    "title": "Git 添加 SSH KEY",
+    "url": "/posts/Git-add-ssh-key/",
+    "categories": "开发工具, Git",
+    "tags": "",
+    "date": "2017-09-08 10:05:29 +0800",
+    
+
+
+
+
+
+    "snippet": "拉去远端仓库代码一般包括 HTTPS 和 SSH 两种方式.如果为 非公开仓库 使用 HTTPS 时候每次都要输入密码, 比较繁琐. 因此使用 SSH 的方式就比较方便了.  使用 SSH 公钥还可以让你在你的电脑和 远端Git 通讯的时候使用安全连接（Git 的 Remote 要使用 SSH 地址）像 git@gitee.com:xxxxxx/xxxxxx.git 的类似形式生成 SSH KEY执行如下命令:$ ssh-keygen -t rsa -C &quot;username@hostname.com&quot;接下来会有如下提示:Generating public/private rsa key pair.Enter file in which to save the key (/Users/xxxxx/.ssh/id_rsa): filename # 文件名Enter passphrase (empty for no passphrase): # 输入密码 (可以直接回车不设置)Enter same passphrase again: # 再次输入密码最终控制台打印结果:Your identification has been saved in gitee.Your public key has been saved in gitee.pub.The key fingerprint is:SHA256:OO+WGxpm62Eo+WvelRkaouGNBybn/w3z/kFADlCSWJs username@hostname.comThe key&#39;s randomart image is:+---[RSA 3072]----+|   o++o .        ||  . .+ +         ||    E   o        ||       . .       ||. = . + S .      || * B o = =       ||  B + X *..      ||   =.= %o. .     ||   o=+*o*o.      |+----[SHA256]-----+之后就会生成 filename (私钥) 和 filename.pub(公钥) 两个文件.添加 SSH KEY 到 Git 远端我们常用的第三方平台有: Github Gitee Coding Gitlab 等.添加方法都基本一致:  设置 -&amp;gt; SSH 公钥.  填入 标题 和 公钥.  一般还会验证 平台登录密码, 成功后即可成功添加.  公钥 可以直接用文本编辑工具打开, 直接 全部复制 获得添加 SSH KEY 至 ssh-agent以上步骤完成之后大概率 git clone 也就会报错:Cloning into &#39;repository&#39;...git@xxxxxx.com: Permission denied (publickey).fatal: Could not read from remote repository.执行如下命令:ssh-add ./filename # 此处为文件路径Enter passphrase for ./filename: # 输入密码Identity added: ./filename (username@hostname.com) # 添加成功  因为控制台当前路径在 .ssh 目录下, 因此路径为 ./filename此处输入的密码为创建 ssh key 时候的密码尝试执行 git clone 命令$ git clone git@xxxxxxx.com:xxxxxx/repository.gitCloning into &#39;repository.&#39;...remote: Enumerating objects: 405, done.remote: Counting objects: 100% (405/405), done.remote: Compressing objects: 100% (340/340), done.remote: Total 405 (delta 101), reused 213 (delta 18), pack-reused 0Receiving objects: 100% (405/405), 14.16 MiB | 4.62 MiB/s, done.Resolving deltas: 100% (101/101), done.仓库成功拉到本地."
+  },
+  
+  {
+    "title": "iOS 引入不支持 x86 的 SDK 后,其他功能仍需用模拟器调试的解决办法",
+    "url": "/posts/iOS%E5%BC%95%E5%85%A5%E4%B8%8D%E6%94%AF%E6%8C%81-x86-%E7%9A%84-SDK-%E5%90%8E,%E5%85%B6%E4%BB%96%E5%8A%9F%E8%83%BD%E4%BB%8D%E9%9C%80%E7%94%A8%E6%A8%A1%E6%8B%9F%E5%99%A8%E8%B0%83%E8%AF%95%E7%9A%84%E8%A7%A3%E5%86%B3%E5%8A%9E%E6%B3%95/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2017-06-28 13:17:58 +0800",
+    
+
+
+
+
+
+    "snippet": "如果引入不支持 x86 的静态库, 则模拟器就不能正常调试了.报以下类似的错误:之前使用别的公司的 SDK 时候如果不支持 x86 的话, 最简单的解决办法就是直接找技术支持要一个支持的新静态库,正常都会给你的,但是这次人家不愿意给(原因:相关功能需要使用真机硬件设备,模拟器不具备硬件条件),所以拒绝了.但是有些情况下又需要用模拟器来调试, 比如 UI 需要更换不同尺寸的模拟器来调试, 既然人家不愿意给,只能自己解决了.正常就算导入了静态库, 只要代码里面没有引入静态库的类, 编译就能正常通过,否则就会报错.但是导入静态库不就是为了用么?既然必须使用, 还要在模拟器调试时候不引入, 只能利用条件编译来解决了这里可以直接使用系统的宏来解决:TARGET_OS_IPHONE 如果是真机, 则为真// 如果是真机运行,则编译以下内容, 否则忽略#if TARGET_OS_IPHONE  #endif或者使用TARGET_IPHONE_SIMULATOR使用模拟器运行为真// 如果是非模拟器的设备, 则编译以下内容, 否则忽略#if !TARGET_IPHONE_SIMULATOR#endif可以分成多段使用:引入头文件#if TARGET_OS_IPHONE    #import &quot;xxxxx.h&quot;    #import &quot;xxxxx.h&quot;    ...    ...#endif类/方法调用- (void)example {#if TARGET_OS_IPHONE    XClass *xx = [[XClass alloc] init];    [xx method];    ....    ....#endif}埋坑系列有些第三方的 SDK 有静态库的同是, 还附带一些工具类, 或者带有一些 UI 类, Controller + StoryBoard, 集成最简单的办法就是使用第三方提供的 UI 类来集成.(这些 UI 类你是可以看到源码的)如果 UI 类报错了, 当然可以使用简单粗暴的方法:#if TARGET_OS_IPHONE    #import &quot;xxxxxxx.h&quot;    #import &quot;xxxxxxx.h&quot;    ....    ....@interface ViewController ()- (IBAction)xxxx:(UIButton *)sender;@end@implementation ViewController- (void)viewDidLoad {    [super viewDidLoad];    ....}- (void)sample {    ....}@end#endif但是问题没有那么简单第一种比较简单的情况:你会发现在真机上运行之后突然Crash掉.错误信息如下:虽然编译阶段通过了, 但是系统却找不到这个类的实现部分, 最终导致 StoryBoard默认加载UIViewController, 然后又调用了UIViewController本身没有实现的方法,导致最终Crash.第二种情况:如果这个 UI 类存在 Category 的话, 连编译阶段都通过不了,会报如下错误:解决办法针对以上2种情况, 有共同的解决办法:#import &quot;xxxxxxx.h&quot;// 根据需求引入静态库相关的头文件#if TARGET_OS_IPHONE    #import &quot;xxxxxxx.h&quot;    #import &quot;xxxxxxx.h&quot;    ....    ....#endif@interface ViewController ()- (IBAction)xxxx:(UIButton *)sender;@end@implementation ViewController// 只把类的方法写在条件编译条件内#if TARGET_OS_IPHONE- (void)viewDidLoad {    [super viewDidLoad];    ....}- (void)sample {    ....}#endif@end最后出现的2个问题, 只给出了错误样例和解决办法,没有解释问题的原因只做如下猜测:  问题1可能是因为编译器的原因, 没有找到类头文件对应.m 文件内类实现部分, 所以未把类的实现部分编译进去.但是编译阶段还是通过了.最终导致 Crash  问题2中可能在编译阶段就要把 Category 融入到类中去, 但是未找到类的实现部分, 所以编译无法进行下去,所以报错.文中如有错误的地方欢迎指正…."
+  },
+  
+  {
+    "title": "iOS导航栏背景渐变过渡",
+    "url": "/posts/iOS%E5%AF%BC%E8%88%AA%E6%A0%8F%E8%83%8C%E6%99%AF%E6%B8%90%E5%8F%98%E8%BF%87%E6%B8%A1/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2017-04-27 11:08:22 +0800",
+    
+
+
+
+
+
+    "snippet": "前言最近新做的一个项目,里面出现了页面 Push 之后的新页面导航栏颜色改变的情况.但是仅仅用系统提供的 api, Push 时候的动画特别难看.最终用 透明的导航栏背景+假背景视图的方式稍微做出了一些改善.效果如图:实际就是把 NavigationBar 的背景颜色设置为透明,然后在控制器的主视图上添加一个跟导航栏一样大小的 view 来当做背景.设置 navigationBar 背景为透明// 设置 navigationBar 背景为透明[self.navigationBar setBackgroundImage:[UIImage new] forBarMetrics:UIBarMetricsDefault];// 隐藏 navigationBar 底部分割线self.navigationBar.shadowImage = [UIImage new];添加背景视图,来营造一个错觉,来让用户认为 navigationBar 就是背景视图的颜色.CGSize screenSize = [UIScreen mainScreen].bounds.size;self.navBackView_zhk = [[UIView alloc] initWithFrame:CGRectMake(0, 0, screenSize.width, 64)];[self.view addSubview:_navBackView_zhk];本来感觉已经挺满意了,但是后来发现支付宝里面的页面过渡,导航栏背景颜色的渐变过渡更加的流畅.于是决定研究一下.###全屏滑动返回手势既然决定做导航栏背景过渡渐变效果,为了方便测试和突显这个流畅的效果.就顺便把全屏滑动返回手势也顺便做了吧.先放最终效果图:1. 添加需要用到的属性@interface BaseViewController () &amp;lt;UINavigationControllerDelegate&amp;gt;// 导航栏背景视图@property (nonatomic, strong) UIView *navBackView_zhk;// 交互动画控制对象(主要用于全屏手势返回过程动画的控制)@property (nonatomic, strong) UIPercentDrivenInteractiveTransition *interactiveTransition_zhk;@end2. 添加拖动手势UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(_zhk_popGestureAction:)];[self.view addGestureRecognizer:pan];3. 手势响应方法当手势发生时候调用[self.navigationController popViewControllerAnimated:YES] 进行Pop.手势拖动过程中不断调用[_interactiveTransition_zhk updateInteractiveTransition:progress]来更新过渡动画的进度.当手势取消或者结束的时候,判断progress,如果&amp;gt;0.5则直接完成过渡动画,否则取消过渡动画.- (void)_zhk_popGestureAction:(UIPanGestureRecognizer *)pan {    // 计算动画进度百分比    CGFloat offset = [pan translationInView:self.view].x;    CGFloat progress = offset / [UIScreen mainScreen].bounds.size.width;    if (pan.state == UIGestureRecognizerStateBegan) {        self.interactiveTransition_zhk = [[UIPercentDrivenInteractiveTransition alloc] init];        // pop        [self.navigationController popViewControllerAnimated:YES];    }else if (pan.state == UIGestureRecognizerStateChanged) {        // 更新动画进度        [_interactiveTransition_zhk updateInteractiveTransition:progress];    }else if (pan.state == UIGestureRecognizerStateEnded || pan.state == UIGestureRecognizerStateCancelled) {        // 大于 50% 完成过渡动画, 否则取消        if (progress &amp;gt; 0.5) {            [_interactiveTransition_zhk finishInteractiveTransition];        }else {            [_interactiveTransition_zhk cancelInteractiveTransition];        }        self.interactiveTransition_zhk = nil;    }}4. 实现UINavigationControllerDelegate代理方法传递交互动画控制对象_interactiveTransition_zhk和动画对象NavBackAnimate#pragma mark - UINavigationController delegate// 返回交互过渡动画控制对象- (nullable id &amp;lt;UIViewControllerInteractiveTransitioning&amp;gt;)navigationController:(UINavigationController *)navigationController                                   interactionControllerForAnimationController:(id &amp;lt;UIViewControllerAnimatedTransitioning&amp;gt;) animationController {    return _interactiveTransition_zhk;}// 返回过渡动画对象- (nullable id &amp;lt;UIViewControllerAnimatedTransitioning&amp;gt;)navigationController:(UINavigationController *)navigationController                                            animationControllerForOperation:(UINavigationControllerOperation)operation                                                         fromViewController:(UIViewController *)fromVC                                                           toViewController:(UIViewController *)toVC  {    return [NavBackAnimate animationWithOperation:operation];}动画对象实现动画对象需要接受UIViewControllerAnimatedTransitioning协议@interface NavBackAnimate : NSObject &amp;lt;UIViewControllerAnimatedTransitioning&amp;gt;+ (instancetype)animationWithOperation:(UINavigationControllerOperation)operation;@endUIViewControllerAnimatedTransitioning协议:// 返回动画完成需要的时间- (NSTimeInterval)transitionDuration:(nullable id &amp;lt;UIViewControllerContextTransitioning&amp;gt;)transitionContext;// 过渡动画的定义都在这里- (void)animateTransition:(id &amp;lt;UIViewControllerContextTransitioning&amp;gt;)transitionContext;// 如果过渡动画是可以被中断的,则可以实现这个方法( iOS 10 之后)- (id &amp;lt;UIViewImplicitlyAnimating&amp;gt;) interruptibleAnimatorForTransition:(id &amp;lt;UIViewControllerContextTransitioning&amp;gt;)transitionContext NS_AVAILABLE_IOS(10_0);// 过渡动画结束时候调用- (void)animationEnded:(BOOL) transitionCompleted;最主要的是- (void)animateTransition:(id &amp;lt;UIViewControllerContextTransitioning&amp;gt;)transitionContext方法的动画实现部分// This method can only  be a nop if the transition is interactive and not a percentDriven interactive transition.- (void)animateTransition:(id &amp;lt;UIViewControllerContextTransitioning&amp;gt;)transitionContext {    BaseViewController *fromVC = [transitionContext viewControllerForKey:UITransitionContextFromViewControllerKey];    BaseViewController *toVC = [transitionContext viewControllerForKey:UITransitionContextToViewControllerKey];        // nav 背景是否需要过渡动画(颜色不同则需要,否则不需要)    BOOL navBackNeedTransition = ![fromVC.navBackColor_zhk isEqual:toVC.navBackColor_zhk];    // 获取呈现过渡动画的视图(容器)    UIView *containerView = [transitionContext containerView];        CGSize screenSize = [UIScreen mainScreen].bounds.size;    //     UIImageView *imageView = [[UIImageView alloc] initWithFrame:CGRectMake(0, 0, screenSize.width, screenSize.height)];    // Push 时候的动画设置(动画开始状态设置)    if (_operation == UINavigationControllerOperationPush) {                [containerView addSubview:imageView];        [containerView addSubview:toVC.view];                imageView.image = [self snapshot:fromVC.view];        imageView.frame = CGRectMake(0, 0, screenSize.width, screenSize.height);        toVC.view.frame = CGRectMake(screenSize.width, 0, screenSize.width, screenSize.height);        // 设置阴影        toVC.view.layer.shadowColor = [UIColor grayColor].CGColor;        toVC.view.layer.shadowOffset = CGSizeMake(-3, 0);        toVC.view.layer.shadowOpacity = .5;            // Pop 时候过渡动画的设置(动画开始状态设置)    }else if (_operation == UINavigationControllerOperationPop) {                [containerView addSubview:toVC.view];        [containerView addSubview:imageView];                imageView.image = [self snapshot:fromVC.view];        imageView.frame = fromVC.view.bounds;        toVC.view.frame = CGRectMake(-screenSize.width / 3, 0, screenSize.width, screenSize.height);                imageView.layer.shadowColor = [UIColor grayColor].CGColor;        imageView.layer.shadowOffset = CGSizeMake(-3, 0);        imageView.layer.shadowOpacity = .5;    }    // navigationBar 底部假背景视图    // 背景的渐变过渡将会通过 backView 背景的渐变来呈现出 navigationBar 背景渐变的错觉    UIView *backView = nil;    if (navBackNeedTransition) {        backView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, screenSize.width, 64)];        backView.backgroundColor = fromVC.navBackColor_zhk;        [containerView addSubview:backView];    }        [UIView animateWithDuration:Duration animations:^{        if (_operation == UINavigationControllerOperationPush) {            // Push 过渡动画结束时候状态设置            imageView.frame = CGRectMake(-screenSize.width / 3, 0, screenSize.width, screenSize.height);            toVC.view.frame = CGRectMake(0, 0, screenSize.width, screenSize.height);                    }else if (_operation == UINavigationControllerOperationPop) {            // Pop 过渡动画结束时候状态设置            imageView.frame = CGRectMake(screenSize.width, 0, screenSize.width, screenSize.height);            toVC.view.frame = CGRectMake(0, 0, screenSize.width, screenSize.height);        }        // backView 目标背景色        backView.backgroundColor = toVC.navBackColor_zhk;    } completion:^(BOOL finished) {        // 动画结束时候调用        [transitionContext completeTransition:![transitionContext transitionWasCancelled]];        // imageView 如果不移除, 后面页面的交互将被遮挡        [imageView removeFromSuperview];        [backView removeFromSuperview];    }];}Push 和 Pop 的过渡动画实际上都是通过 toVC.view 和 从 fromVC.view 获取到的 image 也就是 imageView 这个容器进行一些列改变或者动作来呈现出页面切换这个动态.最后放上 GitHub 地址,希望能帮到有需求的小伙伴."
+  },
+  
+  {
+    "title": "iOS获取 App详细信息的方法",
+    "url": "/posts/iOS%E8%8E%B7%E5%8F%96-App%E8%AF%A6%E7%BB%86%E4%BF%A1%E6%81%AF%E7%9A%84%E6%96%B9%E6%B3%95/",
+    "categories": "开发总结, iOS",
+    "tags": "",
+    "date": "2017-04-14 17:32:46 +0800",
+    
+
+
+
+
+
+    "snippet": "1. 通过 info.plist 文件中的 bundle version 中获取：NSDictionary *infoDic = [[NSBundle mainBundle] infoDictionary];      CFShow(infoDic);        NSString *appVersion = [infoDic objectForKey:@&quot;CFBundleShortVersionString&quot;];// .... 2. 通过苹果服务器获取利用 iTunes Search API  获取 app 信息其中一种方法是根据 app 的 id 来查找：http://itunes.apple.com/lookup?id=appId (appId为应用 id)或者http://itunes.apple.com/lookup?bundleId=bundleId (bundleId为应用的 BundleId)  回来补坑  如果你的应用是在全世界范围内销售的话, 用上面的是没问题的但是,如果仅仅是在部分地区, 比如只在中国商店提供下载,就需要在路径是加上国家的缩写 cn.http://itunes.apple.com/cn/lookup?id=appId (appId为应用 id)同理, 利用 bundleId 获取也是一样的, 路径上需要加上地区 cn.http://itunes.apple.com/cn/lookup?bundleId=bundleId (bundleId为应用的 BundleId)否则你将会得到一个 results : [] 的结果  解决问题的原帖地址返回的json 数据 结构{    &quot;resultCount&quot;: 1,    &quot;results&quot;: [        {            &quot;ipadScreenshotUrls&quot;: [                &quot;http://a2.mzstatic.com/us/r30/Purple62/v4/31/3b/dd/313bdd53-bf40-4d07-6e08-11e926575348/sc552x414.jpeg&quot;,                &quot;http://a4.mzstatic.com/us/r30/Purple71/v4/20/a2/72/20a27207-ce2d-1069-cc4d-fb550c089d91/sc552x414.jpeg&quot;,                &quot;http://a2.mzstatic.com/us/r30/Purple71/v4/49/7e/af/497eaf80-e64f-8896-c033-25fb90b0f4be/sc552x414.jpeg&quot;,                &quot;http://a5.mzstatic.com/us/r30/Purple62/v4/9a/db/3b/9adb3b9c-3ba3-29e1-db43-628d16dcac91/sc552x414.jpeg&quot;,                &quot;http://a5.mzstatic.com/us/r30/Purple71/v4/19/01/af/1901af49-4678-e985-d967-9a796636c4d6/sc552x414.jpeg&quot;            ],            &quot;appletvScreenshotUrls&quot;: [],            &quot;artworkUrl60&quot;: &quot;http://is5.mzstatic.com/image/thumb/Purple111/v4/e5/59/03/e55903e7-f8de-c582-7729-f918147018c1/source/60x60bb.jpg&quot;,            &quot;artworkUrl512&quot;: &quot;http://is5.mzstatic.com/image/thumb/Purple111/v4/e5/59/03/e55903e7-f8de-c582-7729-f918147018c1/source/512x512bb.jpg&quot;,            &quot;artworkUrl100&quot;: &quot;http://is5.mzstatic.com/image/thumb/Purple111/v4/e5/59/03/e55903e7-f8de-c582-7729-f918147018c1/source/100x100bb.jpg&quot;,            &quot;artistViewUrl&quot;: &quot;https://itunes.apple.com/us/developer/yelp/id284910353?uo=4&quot;,            &quot;features&quot;: [                &quot;iosUniversal&quot;            ],            &quot;kind&quot;: &quot;software&quot;,            &quot;supportedDevices&quot;: [                &quot;iPad2Wifi-iPad2Wifi&quot;,                &quot;iPad23G-iPad23G&quot;,                &quot;iPhone4S-iPhone4S&quot;,                &quot;iPadThirdGen-iPadThirdGen&quot;,                &quot;iPadThirdGen4G-iPadThirdGen4G&quot;,                &quot;iPhone5-iPhone5&quot;,                &quot;iPodTouchFifthGen-iPodTouchFifthGen&quot;,                &quot;iPadFourthGen-iPadFourthGen&quot;,                &quot;iPadFourthGen4G-iPadFourthGen4G&quot;,                &quot;iPadMini-iPadMini&quot;,                &quot;iPadMini4G-iPadMini4G&quot;,                &quot;iPhone5c-iPhone5c&quot;,                &quot;iPhone5s-iPhone5s&quot;,                &quot;iPadAir-iPadAir&quot;,                &quot;iPadAirCellular-iPadAirCellular&quot;,                &quot;iPadMiniRetina-iPadMiniRetina&quot;,                &quot;iPadMiniRetinaCellular-iPadMiniRetinaCellular&quot;,                &quot;iPhone6-iPhone6&quot;,                &quot;iPhone6Plus-iPhone6Plus&quot;,                &quot;iPadAir2-iPadAir2&quot;,                &quot;iPadAir2Cellular-iPadAir2Cellular&quot;,                &quot;iPadMini3-iPadMini3&quot;,                &quot;iPadMini3Cellular-iPadMini3Cellular&quot;,                &quot;iPodTouchSixthGen-iPodTouchSixthGen&quot;,                &quot;iPhone6s-iPhone6s&quot;,                &quot;iPhone6sPlus-iPhone6sPlus&quot;,                &quot;iPadMini4-iPadMini4&quot;,                &quot;iPadMini4Cellular-iPadMini4Cellular&quot;,                &quot;iPadPro-iPadPro&quot;,                &quot;iPadProCellular-iPadProCellular&quot;,                &quot;iPadPro97-iPadPro97&quot;,                &quot;iPadPro97Cellular-iPadPro97Cellular&quot;,                &quot;iPhoneSE-iPhoneSE&quot;,                &quot;iPhone7-iPhone7&quot;,                &quot;iPhone7Plus-iPhone7Plus&quot;,                &quot;iPad611-iPad611&quot;,                &quot;iPad612-iPad612&quot;            ],            &quot;screenshotUrls&quot;: [                &quot;http://a1.mzstatic.com/us/r30/Purple62/v4/e9/66/bf/e966bfa0-78c6-739e-a1b2-1d37ea53432f/screen696x696.jpeg&quot;,                &quot;http://a1.mzstatic.com/us/r30/Purple62/v4/45/cf/71/45cf71de-77d9-363a-8100-ade36f9a3a40/screen696x696.jpeg&quot;,                &quot;http://a5.mzstatic.com/us/r30/Purple62/v4/a3/af/ad/a3afadb5-fde5-3ec5-169e-b5131672a28c/screen696x696.jpeg&quot;,                &quot;http://a2.mzstatic.com/us/r30/Purple62/v4/38/fe/a5/38fea567-c499-45a6-a69b-dadc34614ff8/screen696x696.jpeg&quot;            ],            &quot;advisories&quot;: [                &quot;Infrequent/Mild Sexual Content and Nudity&quot;,                &quot;Infrequent/Mild Profanity or Crude Humor&quot;,                &quot;Infrequent/Mild Mature/Suggestive Themes&quot;,                &quot;Infrequent/Mild Alcohol, Tobacco, or Drug Use or References&quot;            ],            &quot;isGameCenterEnabled&quot;: false,            &quot;languageCodesISO2A&quot;: [                &quot;CS&quot;,                &quot;DA&quot;,                &quot;NL&quot;,                &quot;EN&quot;,                &quot;FI&quot;,                &quot;FR&quot;,                &quot;DE&quot;,                &quot;IT&quot;,                &quot;JA&quot;,                &quot;MS&quot;,                &quot;NB&quot;,                &quot;PL&quot;,                &quot;PT&quot;,                &quot;ZH&quot;,                &quot;ES&quot;,                &quot;SV&quot;,                &quot;ZH&quot;,                &quot;TR&quot;            ],            &quot;fileSizeBytes&quot;: &quot;169932800&quot;,            &quot;trackCensoredName&quot;: &quot;Yelp - Nearby Restaurants, Shopping &amp;amp; Services&quot;,            &quot;contentAdvisoryRating&quot;: &quot;12+&quot;,            &quot;averageUserRatingForCurrentVersion&quot;: 4.5,            &quot;userRatingCountForCurrentVersion&quot;: 1692,            &quot;trackViewUrl&quot;: &quot;https://itunes.apple.com/us/app/yelp-nearby-restaurants-shopping-services/id284910350?mt=8&amp;amp;uo=4&quot;,            &quot;trackContentRating&quot;: &quot;12+&quot;,            &quot;currency&quot;: &quot;USD&quot;,            &quot;wrapperType&quot;: &quot;software&quot;,            &quot;version&quot;: &quot;11.12.0&quot;,            &quot;description&quot;: &quot;Yelp has over 100 million reviews of businesses worldwide and is available for iPhone, iPad, and Apple Watch.\\n\\nWhether you’re looking for a pizzeria that just opened or a coffee shop nearby, Yelp is your local guide to finding the perfect place to eat, shop, drink, relax and play.\\n\\nYelp features:\\n\\nFind Restaurants\\n• Find the newest and hottest restaurants in your area\\n• Make reservations, pick up food and order for delivery, all from your phone\\n• Filter restaurant search results by price, location and more\\n\\nSearch for Nearby Businesses\\n• Discover great local businesses\\n• Read millions of reviews by the Yelp community\\n• Find great deals offered by local businesses\\n\\nSearch Filters \\n• Filter your search results by neighborhood, distance, rating, price and hours of operation\\n• Look up addresses and phone numbers, call a business or make reservations directly from the app\\n\\nOther Features\\n• Read expert user reviews and browse through beautiful photos of each business\\n• Write and read reviews, check-in to local businesses, upload photos and add tips for other Yelp users\\n\\nFind local restaurants, read expert customer reviews and start searching for businesses near you with Yelp.\\n\\nNeed Help? Contact Yelp at https://www.yelp-support.com/?l=en_US\\nNote: Continued use of GPS running can dramatically decrease battery life.&quot;,            &quot;artistId&quot;: 284910353,            &quot;artistName&quot;: &quot;Yelp&quot;,            &quot;genres&quot;: [                &quot;Travel&quot;,                &quot;Food &amp;amp; Drink&quot;            ],            &quot;price&quot;: 0,            &quot;formattedPrice&quot;: &quot;Free&quot;,            &quot;trackId&quot;: 284910350,            &quot;trackName&quot;: &quot;Yelp - Nearby Restaurants, Shopping &amp;amp; Services&quot;,            &quot;bundleId&quot;: &quot;com.yelp.yelpiphone&quot;,            &quot;primaryGenreName&quot;: &quot;Travel&quot;,            &quot;isVppDeviceBasedLicensingEnabled&quot;: true,            &quot;releaseDate&quot;: &quot;2008-07-11T07:00:00Z&quot;,            &quot;releaseNotes&quot;: &quot;Spring’s coming and bugs are coming back in style in the real world, but in the Yelp app they’re going out of style and fast. We fixed a whole bunch.&quot;,            &quot;primaryGenreId&quot;: 6003,            &quot;genreIds&quot;: [                &quot;6003&quot;,                &quot;6023&quot;            ],            &quot;sellerName&quot;: &quot;Yelp, Inc.&quot;,            &quot;minimumOsVersion&quot;: &quot;8.0&quot;,            &quot;currentVersionReleaseDate&quot;: &quot;2017-04-05T18:53:21Z&quot;,            &quot;averageUserRating&quot;: 4,            &quot;userRatingCount&quot;: 213622        }    ]}更详细的文档地址:https://affiliate.itunes.apple.com/resources/documentation/itunes-store-web-service-search-api/"
+  },
+  
+  {
+    "title": "PHP + iOS 实现移动端扫码登录",
+    "url": "/posts/PHP-+-iOS-%E5%AE%9E%E7%8E%B0%E7%A7%BB%E5%8A%A8%E7%AB%AF%E6%89%AB%E7%A0%81%E7%99%BB%E5%BD%95/",
+    "categories": "开发总结, PHP",
+    "tags": "",
+    "date": "2017-02-19 14:32:46 +0800",
+    
+
+
+
+
+
+    "snippet": "前言最近周末闲着没事,就想建个站玩玩.于是就想起了后台登陆验证的方式是不是可以玩个新花样.比如搞个手机扫码登录验证的方式.说干就干,研究一下扫码登录的原理(当然,如果有什么地方有更好的实现方法或者错误的地方欢迎指正).正文原理手机端扫码简单,就不做阐述.后台使用PHP来实现.(暂时只考虑实现,先不考虑其他安全方面的问题,功能实现之后再做考虑).基本原理:1.Web前端展示二维码,二维码信息中包含有sessionId, 并用轮训的方式来不断的从服务端请求手机端验证的结果.2.手机端扫码并获取sessionId,然后向服务器提交sessionId以及其他数据.3.当服务器接收到手机端提交的sessionId后,就通过sessionId来打通手机端和Web前端之间的session,并标记登录状态为验证通过.4.Web前端获取到验证通过信息后,跳转页面.实现iOS 部分实现:iOS 端的实现很简单, 仅仅是扫码获取 sessionId, 然后通过接口发送 sessionId 以及其他一些必须数据.二维码扫描不说了, 二维码扫描成功后使用 AFNetworking 向服务器确认登录信息.发送参数为二维码信息的 sessionId. 服务器只要接收到 sessionId 就会标记接收到的 sessionId 所属回话为已登录状态./** 扫描完成回调 @param message 二维码扫描结果 */- (void)qrcodeScanSuccessWithMessage:(NSString *)message {    if (!message) {        NSLog(@&quot;message = nil&quot;);        return;    }    [[AFHTTPSessionManager manager] POST:@&quot;http://192.168.3.7:8888/qrcodelogin/home/index/deviceLogin&quot; parameters:@{@&quot;sessionId&quot; : message} progress:nil success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable responseObject) {        // 打印服务器返回信息        NSLog(@&quot;success = %@&quot;, responseObject);    } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {        //  打印报错信息方便调试        NSString* errResponse = [[NSString alloc] initWithData:(NSData *)error.userInfo[AFNetworkingOperationFailingURLResponseDataErrorKey] encoding:NSUTF8StringEncoding];        NSLog(@&quot;%@&quot;, errResponse);    }];}Web 前端实现:通过轮询的方式向服务器确认, 移动端是否已经通过扫码验证成功. 获取到验证成功信息则跳转或者提醒登录成功(事例中仅仅只是提醒). 否则在延迟 2 秒后进入下一次查询,直到获取到登录成功信息为止.只上 js 代码, html 代码略掉.// 计数,方便测试(可以直观的查看当前调用的次数)var count = 0;// 请求服务器登录确认(轮询方法)function requestCheck(){    $.post(&quot;login&quot;,{}, function(data){           // 服务器返回非 &quot;no&quot; 字符串就算验证通过, 否则进入下一轮查询           if (data != &quot;no&quot;) {               $(&quot;div.loginBox&quot;).html(&quot;登录成功&quot;);           }else {               // 显示当前轮询次数               $(&quot;div.count&quot;).html(count++);               // 每次请求完成后, 延迟 2 秒, 再次进行查询               setTimeout(&quot;requestCheck()&quot;, 2000);           }    });}// button 点击事件响应方法function cl() {    // 显示二维码    $(&quot;div.loginBox&quot;).html(&quot;![](qrcode)&quot;);    // 调用轮询方法    requestCheck();}PHP 实现:php 实现使用了 ThinkPHP 框架首先是 Web 前端显示二维码页面的请求方法:// 登录页public function index(){    // 主要用于调试过程中, web 和移动端 session 是否已经打通    $_SESSION[&quot;username&quot;] = &quot;test&quot;;    echo &quot;username = &quot;.$_SESSION[&quot;username&quot;];    $this-&amp;gt;display(T(&#39;login&#39;));}其次是手机移动端扫描二维码后请求登录的方法:// 移动端确认登录public function deviceLogin() {    $sid = I(&quot;post.sessionId&quot;);    $result;    if ($sid) {        // 先销毁当前 session        session(&#39;[destroy]&#39;);        // 再获取 sessionId 对应的 session        Session_id($sid);        Session_start();        // 设置登录状态(只要 deviceUUID 字段的值存在则视为已经登录)        $_SESSION[&#39;deviceUUID&#39;] = &quot;ABCDESDASDEFSDSDA&quot;;        $result[&quot;code&quot;] = 1;        $result[&quot;username&quot;] = $_SESSION[&quot;username&quot;];    }else {        $result[&quot;code&quot;] = 0;    }    echo json_encode($result);}最后是 Web 前端 Ajax 轮询请求确认登录状态的方法:// web 前端 ajax 请求确认登录状态方法public function login(){    if (isset($_SESSION[&#39;deviceUUID&#39;])) {        // 如果 $_SESSION[&#39;deviceUUID&#39;] 值存在, 则表明移动端确认了登录信息, 表明验证通过        // 返回登录确认信息        echo $_SESSION[&#39;deviceUUID&#39;];    }else {        // 否则表明移动端还未确认登录,        // 返回还未确认登录信息        echo &quot;no&quot;;    }}最后的最后附上生成二维码的方法:public function qrcode(){    $message = session_id();    if ($message) {        // 引入第三方库文件        // 真实路径为(Vendor/Phpqrcode/phpqrcode.php)        Vendor(&#39;Phpqrcode.phpqrcode&#39;);        \\QRcode::png($message, false, QR_ECLEVEL_L, 4, 2, false, 0xFFFFFF, 0x000000);    }else {        echo &quot;error&quot;;    }}总结  引入phpqrcode时候直接把phpqrcode.php文件放在ThinkPHP/Library/Vendor/Phpqrcode路径下.  调用phpqrcode时候需要\\QRcode::png, 指定命名空间为空(因为phpqrcode并没有使用命名空间, 如果直接调用, 就会报错).  关于 短轮询 和 长轮询,在一开始看了网上的介绍之后,感觉使用 长轮询 优点那么多, 就决定使用 长轮询, 结果尝试了之后发现如果在开启了session的站点使用 长轮询 会造成其他请求的阻塞(之后会再写一篇文章讨论这个问题,可以先参考这个帖子).因为当时并没有看到这个帖子,所以最终暂时选择了 短轮询 来实现."
+  }
+  
+]
+
