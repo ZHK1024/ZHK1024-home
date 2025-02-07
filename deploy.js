@@ -10,7 +10,7 @@ async function deploy() {
     // 3. 删除站点仓库中除了 .git 开头的所有文件, 包括文件夹和文件
     const files = fs.readdirSync(siteDir);
     files.forEach(file => {
-        if (!file.startsWith('.git')) {
+        if (!file.startsWith('.')) {
             const filePath = path.resolve(siteDir, file);
             const stat = fs.statSync(filePath);
             if (stat.isFile()) {

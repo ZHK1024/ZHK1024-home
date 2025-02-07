@@ -44,8 +44,11 @@ const resource = [
 /* The request url with below domain will be cached */
 const allowedDomains = [
   
+    'www.googletagmanager.com',
+    'www.google-analytics.com',
+  
 
-  'zhk1024.com',
+  'localhost:4000',
 
   'fonts.gstatic.com',
   'fonts.googleapis.com',
@@ -58,3 +61,5 @@ const denyUrls = [
   
 ];
 
+
+    
