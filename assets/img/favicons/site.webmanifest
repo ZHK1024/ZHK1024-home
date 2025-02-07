@@ -3,7 +3,7 @@
 {
   "name": "ZHK1024",
   "short_name": "ZHK1024",
-  "description": "A minimal, portfolio, sidebar, bootstrap Jekyll theme with responsive web design and focuses on text presentation.",
+  "description": "一个专注于软件开发领域的技术博客.主要记录一下开发者使用到的技术总结和学习笔记,以及感想和感悟.",
   "icons": [
     {
       "src": "/assets/img/favicons/android-chrome-192x192.png",
