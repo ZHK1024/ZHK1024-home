@@ -1,17 +1,17 @@
 
 
 <feed xmlns="http://www.w3.org/2005/Atom">
-  <id>http://localhost:4000/</id>
+  <id>https://zhk1024.com/</id>
   <title>ZHK1024</title>
   <subtitle>一个专注于软件开发领域的技术博客.主要记录一下开发者使用到的技术总结和学习笔记,以及感想和感悟.</subtitle>
-  <updated>2025-02-07T17:48:39+08:00</updated>
+  <updated>2025-02-07T18:16:50+08:00</updated>
   <author>
     <name>ZHK1024</name>
-    <uri>http://localhost:4000/</uri>
+    <uri>https://zhk1024.com/</uri>
   </author>
-  <link rel="self" type="application/atom+xml" href="http://localhost:4000/feed.xml"/>
+  <link rel="self" type="application/atom+xml" href="https://zhk1024.com/feed.xml"/>
   <link rel="alternate" type="text/html" hreflang="zh-CN"
-    href="http://localhost:4000/"/>
+    href="https://zhk1024.com/"/>
   <generator uri="https://jekyllrb.com/" version="4.4.1">Jekyll</generator>
   <rights> © 2025 ZHK1024 </rights>
   <icon>/assets/img/favicons/favicon.ico</icon>
@@ -21,13 +21,13 @@
   
   <entry>
     <title>Xcode16 使用 Cocoapods 报错的解决办法</title>
-    <link href="http://localhost:4000/posts/cocoapods-error-in-xcode16/" rel="alternate" type="text/html" title="Xcode16 使用 Cocoapods 报错的解决办法" />
+    <link href="https://zhk1024.com/posts/cocoapods-error-in-xcode16/" rel="alternate" type="text/html" title="Xcode16 使用 Cocoapods 报错的解决办法" />
     <published>2024-10-18T21:45:00+08:00</published>
   
     <updated>2024-10-18T21:45:00+08:00</updated>
   
-    <id>http://localhost:4000/posts/cocoapods-error-in-xcode16/</id>
-    <content src="http://localhost:4000/posts/cocoapods-error-in-xcode16/" />
+    <id>https://zhk1024.com/posts/cocoapods-error-in-xcode16/</id>
+    <content src="https://zhk1024.com/posts/cocoapods-error-in-xcode16/" />
     <author>
       <name>ZHK1024</name>
     </author>
@@ -79,13 +79,13 @@ RuntimeError - `PBXGroup` attempted to initialize an object with unknown ISA PBX
   
   <entry>
     <title>常见文件头收集</title>
-    <link href="http://localhost:4000/posts/%E6%96%87%E4%BB%B6%E5%A4%B4/" rel="alternate" type="text/html" title="常见文件头收集" />
+    <link href="https://zhk1024.com/posts/%E6%96%87%E4%BB%B6%E5%A4%B4/" rel="alternate" type="text/html" title="常见文件头收集" />
     <published>2021-10-27T09:22:00+08:00</published>
   
     <updated>2021-10-27T09:22:00+08:00</updated>
   
-    <id>http://localhost:4000/posts/%E6%96%87%E4%BB%B6%E5%A4%B4/</id>
-    <content src="http://localhost:4000/posts/%E6%96%87%E4%BB%B6%E5%A4%B4/" />
+    <id>https://zhk1024.com/posts/%E6%96%87%E4%BB%B6%E5%A4%B4/</id>
+    <content src="https://zhk1024.com/posts/%E6%96%87%E4%BB%B6%E5%A4%B4/" />
     <author>
       <name>ZHK1024</name>
     </author>
@@ -135,13 +135,13 @@ RuntimeError - `PBXGroup` attempted to initialize an object with unknown ISA PBX
   
   <entry>
     <title>Swift 中 Protocol 和 泛型</title>
-    <link href="http://localhost:4000/posts/Swift-%E4%B8%AD-Protocol-%E5%92%8C-%E6%B3%9B%E5%9E%8B/" rel="alternate" type="text/html" title="Swift 中 Protocol 和 泛型" />
+    <link href="https://zhk1024.com/posts/Swift-%E4%B8%AD-Protocol-%E5%92%8C-%E6%B3%9B%E5%9E%8B/" rel="alternate" type="text/html" title="Swift 中 Protocol 和 泛型" />
     <published>2020-08-29T21:45:00+08:00</published>
   
     <updated>2025-02-07T16:04:35+08:00</updated>
   
-    <id>http://localhost:4000/posts/Swift-%E4%B8%AD-Protocol-%E5%92%8C-%E6%B3%9B%E5%9E%8B/</id>
-    <content src="http://localhost:4000/posts/Swift-%E4%B8%AD-Protocol-%E5%92%8C-%E6%B3%9B%E5%9E%8B/" />
+    <id>https://zhk1024.com/posts/Swift-%E4%B8%AD-Protocol-%E5%92%8C-%E6%B3%9B%E5%9E%8B/</id>
+    <content src="https://zhk1024.com/posts/Swift-%E4%B8%AD-Protocol-%E5%92%8C-%E6%B3%9B%E5%9E%8B/" />
     <author>
       <name>ZHK1024</name>
     </author>
@@ -194,13 +194,13 @@ protocol AProtocol&amp;lt;T&amp;gt; {}
   
   <entry>
     <title>设置 UIDatePicker 显示日期为中文</title>
-    <link href="http://localhost:4000/posts/%E8%AE%BE%E7%BD%AE-UIDatePicker-%E6%98%BE%E7%A4%BA%E6%97%A5%E6%9C%9F%E4%B8%BA%E4%B8%AD%E6%96%87/" rel="alternate" type="text/html" title="设置 UIDatePicker 显示日期为中文" />
+    <link href="https://zhk1024.com/posts/%E8%AE%BE%E7%BD%AE-UIDatePicker-%E6%98%BE%E7%A4%BA%E6%97%A5%E6%9C%9F%E4%B8%BA%E4%B8%AD%E6%96%87/" rel="alternate" type="text/html" title="设置 UIDatePicker 显示日期为中文" />
     <published>2020-03-24T18:24:00+08:00</published>
   
     <updated>2025-02-07T16:04:35+08:00</updated>
   
-    <id>http://localhost:4000/posts/%E8%AE%BE%E7%BD%AE-UIDatePicker-%E6%98%BE%E7%A4%BA%E6%97%A5%E6%9C%9F%E4%B8%BA%E4%B8%AD%E6%96%87/</id>
-    <content src="http://localhost:4000/posts/%E8%AE%BE%E7%BD%AE-UIDatePicker-%E6%98%BE%E7%A4%BA%E6%97%A5%E6%9C%9F%E4%B8%BA%E4%B8%AD%E6%96%87/" />
+    <id>https://zhk1024.com/posts/%E8%AE%BE%E7%BD%AE-UIDatePicker-%E6%98%BE%E7%A4%BA%E6%97%A5%E6%9C%9F%E4%B8%BA%E4%B8%AD%E6%96%87/</id>
+    <content src="https://zhk1024.com/posts/%E8%AE%BE%E7%BD%AE-UIDatePicker-%E6%98%BE%E7%A4%BA%E6%97%A5%E6%9C%9F%E4%B8%BA%E4%B8%AD%E6%96%87/" />
     <author>
       <name>ZHK1024</name>
     </author>
@@ -252,13 +252,13 @@ datePicker.local = [[NSLocale alloc] initWithLocaleIdentifier:@"zh_CN"]
   
   <entry>
     <title> iOS 中 URL 里面的 '#' 后面的 '/' 被解析为路径的解决办法</title>
-    <link href="http://localhost:4000/posts/iOS-%E4%B8%AD-URL-%E9%87%8C%E9%9D%A2%E7%9A%84-%E5%90%8E%E9%9D%A2%E7%9A%84-%E8%A2%AB%E8%A7%A3%E6%9E%90%E4%B8%BA%E8%B7%AF%E5%BE%84%E7%9A%84%E8%A7%A3%E5%86%B3%E5%8A%9E%E6%B3%95/" rel="alternate" type="text/html" title=" iOS 中 URL 里面的 '#' 后面的 '/' 被解析为路径的解决办法" />
+    <link href="https://zhk1024.com/posts/iOS-%E4%B8%AD-URL-%E9%87%8C%E9%9D%A2%E7%9A%84-%E5%90%8E%E9%9D%A2%E7%9A%84-%E8%A2%AB%E8%A7%A3%E6%9E%90%E4%B8%BA%E8%B7%AF%E5%BE%84%E7%9A%84%E8%A7%A3%E5%86%B3%E5%8A%9E%E6%B3%95/" rel="alternate" type="text/html" title=" iOS 中 URL 里面的 '#' 后面的 '/' 被解析为路径的解决办法" />
     <published>2020-03-24T15:09:00+08:00</published>
   
     <updated>2025-02-07T16:04:35+08:00</updated>
   
-    <id>http://localhost:4000/posts/iOS-%E4%B8%AD-URL-%E9%87%8C%E9%9D%A2%E7%9A%84-%E5%90%8E%E9%9D%A2%E7%9A%84-%E8%A2%AB%E8%A7%A3%E6%9E%90%E4%B8%BA%E8%B7%AF%E5%BE%84%E7%9A%84%E8%A7%A3%E5%86%B3%E5%8A%9E%E6%B3%95/</id>
-    <content src="http://localhost:4000/posts/iOS-%E4%B8%AD-URL-%E9%87%8C%E9%9D%A2%E7%9A%84-%E5%90%8E%E9%9D%A2%E7%9A%84-%E8%A2%AB%E8%A7%A3%E6%9E%90%E4%B8%BA%E8%B7%AF%E5%BE%84%E7%9A%84%E8%A7%A3%E5%86%B3%E5%8A%9E%E6%B3%95/" />
+    <id>https://zhk1024.com/posts/iOS-%E4%B8%AD-URL-%E9%87%8C%E9%9D%A2%E7%9A%84-%E5%90%8E%E9%9D%A2%E7%9A%84-%E8%A2%AB%E8%A7%A3%E6%9E%90%E4%B8%BA%E8%B7%AF%E5%BE%84%E7%9A%84%E8%A7%A3%E5%86%B3%E5%8A%9E%E6%B3%95/</id>
+    <content src="https://zhk1024.com/posts/iOS-%E4%B8%AD-URL-%E9%87%8C%E9%9D%A2%E7%9A%84-%E5%90%8E%E9%9D%A2%E7%9A%84-%E8%A2%AB%E8%A7%A3%E6%9E%90%E4%B8%BA%E8%B7%AF%E5%BE%84%E7%9A%84%E8%A7%A3%E5%86%B3%E5%8A%9E%E6%B3%95/" />
     <author>
       <name>ZHK1024</name>
     </author>
@@ -298,5 +298,3 @@ https://hostname.com/index.html/#/sign/login
 </feed>
 
 
-
-    
